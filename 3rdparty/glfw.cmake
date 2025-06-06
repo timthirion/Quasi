@@ -1,0 +1,18 @@
+ExternalProject_Add(glfw
+  GIT_REPOSITORY git@github.com:glfw/glfw
+  SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/glfw
+  BINARY_DIR ${CMAKE_BINARY_DIR}/glfw-build
+  INSTALL_DIR ${CMAKE_BINARY_DIR}/glfw-install
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  CONFIGURE_COMMAND
+  CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/glfw-install
+      -DGLFW_BUILD_DOCS=OFF
+      -DGLFW_BUILD_EXAMPLES=OFF
+      -DGLFW_BUILD_TESTS=OFF
+)
+
+ExternalProject_Get_property(glfw INSTALL_DIR)
+list(APPEND QUASI_CMAKE_DEFINITIONS "-Dglfw3_DIR=${INSTALL_DIR}/lib/cmake/glfw3")
+
