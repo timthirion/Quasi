@@ -1,5 +1,8 @@
+#find_package(Dawn REQUIRED)
 find_package(glfw3 REQUIRED)
 
-add_executable(test quasi.cpp)
+project(test_app)
 
-target_link_libraries(test PRIVATE glfw)
+add_executable(test_app quasi.cpp)
+
+target_link_libraries(test_app PRIVATE glfw)

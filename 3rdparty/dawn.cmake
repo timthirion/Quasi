@@ -1,0 +1,19 @@
+ExternalProject_Add(dawn
+  GIT_REPOSITORY git@github.com:google/dawn
+  GIT_TAG origin/main
+  SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/dawn
+  BINARY_DIR ${CMAKE_BINARY_DIR}/dawn-build
+  INSTALL_DIR ${CMAKE_BINARY_DIR}/dawn-install
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  CONFIGURE_COMMAND ""
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dawn-install
+    -DDAWN_FETCH_DEPENDENCIES=ON
+    -DDAWN_ENABLE_INSTALL=ON
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+)
+
+ExternalProject_Get_property(dawn INSTALL_DIR)
+list(APPEND QUASI_CMAKE_DEFINITIONS "-Ddawn_DIR=${INSTALL_DIR}/lib/cmake/dawn")
+

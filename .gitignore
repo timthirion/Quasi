@@ -1,4 +1,5 @@
 build/
+3rdparty/*/
 
 # Prerequisites
 *.d
