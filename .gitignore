@@ -1,6 +1,13 @@
 build/
 3rdparty/*/
 
+# Claude Code configuration
+.claude/
+
+# Metal build artifacts
+*.metallib
+*.air
+
 # Prerequisites
 *.d
 
