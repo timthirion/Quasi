@@ -20,7 +20,6 @@ ExternalProject_Add(quasi
     ${QUASI_CMAKE_DEFINITIONS}
     ${CMAKE_MODULE_PATH}
   DEPENDS
-    # dawn
     glfw
     catch2
 )
