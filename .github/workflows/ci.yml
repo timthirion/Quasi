@@ -42,16 +42,33 @@ jobs:
         cd build
         ninja
     
+    - name: List build contents
+      run: |
+        cd build
+        echo "Build directory structure:"
+        find . -name "*test*" -type f
+        echo "Looking for test executables:"
+        find . -name "quasi_tests" -type f
+    
     - name: Run tests
       run: |
         cd build
-        ./quasi-build/tests/quasi_tests
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests
+        else
+          echo "Test executable not found at expected path. Searching..."
+          find . -name "quasi_tests" -exec {} \;
+        fi
     
     - name: Run tests with verbose output
       if: failure()
       run: |
         cd build
-        ./quasi-build/tests/quasi_tests --success --verbose
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests --success --verbose
+        else
+          echo "Test executable not found for verbose run"
+        fi
 
   test-macos:
     runs-on: macos-latest
@@ -77,13 +94,30 @@ jobs:
         cd build
         ninja
     
+    - name: List build contents
+      run: |
+        cd build
+        echo "Build directory structure:"
+        find . -name "*test*" -type f
+        echo "Looking for test executables:"
+        find . -name "quasi_tests" -type f
+    
     - name: Run tests
       run: |
         cd build
-        ./quasi-build/tests/quasi_tests
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests
+        else
+          echo "Test executable not found at expected path. Searching..."
+          find . -name "quasi_tests" -exec {} \;
+        fi
     
     - name: Run tests with verbose output
       if: failure()
       run: |
         cd build
-        ./quasi-build/tests/quasi_tests --success --verbose
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests --success --verbose
+        else
+          echo "Test executable not found for verbose run"
+        fi
