@@ -57,3 +57,41 @@ External dependencies are built automatically via CMake ExternalProjects:
 - Dawn dependency requires network access during first build to fetch additional dependencies
 - Build artifacts are separated: external deps in `{dep}-build/` directories, main app in `quasi-build/`
 - The superbuild ensures proper dependency ordering (Dawn and GLFW built before main application)
+
+## Coding Style Guidelines
+
+### Namespace Convention
+- All C++ code should be placed in the global `Q` namespace
+- Use nested namespaces for organization (e.g., `Q::geometry`, `Q::rendering`, `Q::utils`)
+
+### Naming Conventions
+- **Functions and methods**: Use `snake_case` (e.g., `ray_triangle_intersection()`, `get_length()`)
+- **Variables**: Use `snake_case` (e.g., `intersection_point`, `edge_length`)
+- **Classes and structs**: Use `PascalCase` (e.g., `Vec3`, `Ray`, `Triangle`)
+- **Constants**: Use `UPPER_SNAKE_CASE` (e.g., `EPSILON`, `MAX_ITERATIONS`)
+- **Namespaces**: Use `lowercase` (e.g., `geometry`, `rendering`)
+
+### Code Organization
+- Header files should use `#pragma once` for include guards
+- Place all implementation in `.cpp` files when possible
+- Use meaningful, descriptive names that clearly indicate purpose
+- Prefer explicit over implicit when it improves clarity
+
+### Example
+```cpp
+namespace Q {
+namespace geometry {
+  
+  struct Vec3 {
+    float x, y, z;
+    
+    float get_length() const;
+    Vec3 get_normalized() const;
+    float dot_product(const Vec3& other) const;
+  };
+  
+  std::optional<IntersectionResult> ray_triangle_intersection(const Ray& ray, const Triangle& triangle);
+  
+} // namespace geometry
+} // namespace Q
+```

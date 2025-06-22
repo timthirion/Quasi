@@ -10,6 +10,9 @@ endif()
 
 set(CMAKE_CXX_STANDARD 23)
 
+# Build geometry library
+add_subdirectory(src)
+
 # Build all apps
 add_subdirectory(src/apps)
 

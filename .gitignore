@@ -40,3 +40,7 @@ build/
 *.exe
 *.out
 *.app
+
+# Specific executables in apps directory
+src/apps/metal_triangle
+src/apps/test_app
