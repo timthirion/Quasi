@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          pkg-config \
+          libx11-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libgl1-mesa-dev
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    
+    - name: Build
+      run: |
+        cd build
+        ninja
+    
+    - name: Run tests
+      run: |
+        cd build
+        ./quasi-build/tests/quasi_tests
+    
+    - name: Run tests with verbose output
+      if: failure()
+      run: |
+        cd build
+        ./quasi-build/tests/quasi_tests --success --verbose
+
+  test-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    
+    - name: Build
+      run: |
+        cd build
+        ninja
+    
+    - name: Run tests
+      run: |
+        cd build
+        ./quasi-build/tests/quasi_tests
+    
+    - name: Run tests with verbose output
+      if: failure()
+      run: |
+        cd build
+        ./quasi-build/tests/quasi_tests --success --verbose
