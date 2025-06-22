@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Quasi is a rendering system built on top of Google's Dawn WebGPU implementation and GLFW for windowing. The project uses a CMake-based superbuild system to manage external dependencies.
+Quasi is a rendering system with GLFW for windowing and geometry processing capabilities. The project uses a CMake-based superbuild system to manage external dependencies.
 
 ## Build System Architecture
 
 This project uses a two-stage CMake superbuild approach:
 
-1. **Superbuild stage** (`QUASI_USE_SUPERBUILD=ON`, default): Downloads and builds external dependencies (Dawn, GLFW) as ExternalProjects, then builds the main application
+1. **Superbuild stage** (`QUASI_USE_SUPERBUILD=ON`, default): Downloads and builds external dependencies (GLFW, Catch2) as ExternalProjects, then builds the main application
 2. **Main build stage** (`QUASI_USE_SUPERBUILD=OFF`): Builds only the Quasi application, expecting dependencies to already be available
 
 The superbuild automatically handles dependency management and ensures proper build order.
@@ -38,25 +38,25 @@ cmake --build .
 
 ## Code Architecture
 
-- **Entry point**: `src/apps/quasi.cpp` - Minimal Dawn/GLFW initialization
+- **Core geometry**: `src/geometry.h` and `src/geometry.cpp` - Ray-triangle intersection and vector math
 - **Dependencies**: Managed via CMake ExternalProjects in `3rdparty/`
-  - Dawn (WebGPU implementation) - built from Google's main branch
   - GLFW (windowing) - included as git submodule
+  - Catch2 (testing framework) - included as git submodule
 - **Build configuration**: `CMakeLists.txt` handles superbuild logic, `Superbuild.cmake` orchestrates dependency builds
 
 ## Dependency Management
 
 External dependencies are built automatically via CMake ExternalProjects:
-- Dawn is fetched from GitHub and built with `DAWN_FETCH_DEPENDENCIES=ON`
 - GLFW is included as a git submodule in `3rdparty/glfw/`
+- Catch2 is included as a git submodule in `3rdparty/catch2/`
 - All dependencies install to `${CMAKE_BINARY_DIR}/{dep}-install` directories
 
 ## Important Build Notes
 
 - Uses C++23 standard
-- Dawn dependency requires network access during first build to fetch additional dependencies
+- All dependencies are included as git submodules for reliable CI builds
 - Build artifacts are separated: external deps in `{dep}-build/` directories, main app in `quasi-build/`
-- The superbuild ensures proper dependency ordering (Dawn and GLFW built before main application)
+- The superbuild ensures proper dependency ordering (GLFW and Catch2 built before main application)
 
 ## Coding Style Guidelines
 
