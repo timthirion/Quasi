@@ -2,7 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-using namespace geometry;
+using namespace Q::geometry;
 using Catch::Approx;
 
 TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
@@ -11,7 +11,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.25f, 0.25f, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->hit);
     REQUIRE(result->t == Approx(1.0f));
@@ -24,7 +24,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(2, 2, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE_FALSE(result.has_value());
   }
 
@@ -32,7 +32,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0, 0, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->barycentric.x == Approx(1.0f));
     REQUIRE(result->barycentric.y == Approx(0.0f));
@@ -43,7 +43,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(1, 0, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->barycentric.x == Approx(0.0f));
     REQUIRE(result->barycentric.y == Approx(1.0f));
@@ -54,7 +54,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0, 1, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->barycentric.x == Approx(0.0f));
     REQUIRE(result->barycentric.y == Approx(0.0f));
@@ -65,7 +65,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.5f, 0, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->barycentric.x == Approx(0.5f));
     REQUIRE(result->barycentric.y == Approx(0.5f));
@@ -76,7 +76,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.5f, 0.5f, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->barycentric.x == Approx(0.0f));
     REQUIRE(result->barycentric.y == Approx(0.5f));
@@ -87,7 +87,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0, 0.5f, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->barycentric.x == Approx(0.5f));
     REQUIRE(result->barycentric.y == Approx(0.0f));
@@ -98,7 +98,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.5f, 0.5f, 1), Vec3(1, 0, 0));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE_FALSE(result.has_value());
   }
 
@@ -106,7 +106,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.5f, 0.5f, 1), Vec3(0, 0, 1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE_FALSE(result.has_value());
   }
 
@@ -114,7 +114,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.25f, 0.25f, 0), Vec3(0, 0, 1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE_FALSE(result.has_value());
   }
 
@@ -122,7 +122,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(2, 0, 0), Vec3(0, 2, 0));
     Ray ray(Vec3(0.5f, 0.5f, 2), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->t == Approx(2.0f));
     REQUIRE(result->point.x == Approx(0.5f));
@@ -132,9 +132,9 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
 
   SECTION("13. Oblique ray intersection") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
-    Ray ray(Vec3(0, 0, 2), Vec3(0.25f, 0.25f, -1).normalize());
+    Ray ray(Vec3(0, 0, 2), Vec3(0.25f, 0.25f, -1).get_normalized());
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->hit);
   }
@@ -143,7 +143,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.25f, 0.25f, -1), Vec3(0, 0, 1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->t == Approx(1.0f));
   }
@@ -152,7 +152,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(-10, -10, 0), Vec3(10, -10, 0), Vec3(0, 10, 0));
     Ray ray(Vec3(0, 0, 5), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->point.z == Approx(0.0f));
   }
@@ -161,7 +161,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(0.001f, 0, 0), Vec3(0, 0.001f, 0));
     Ray ray(Vec3(0.0002f, 0.0002f, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
   }
 
@@ -169,7 +169,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(2, 0, 0));
     Ray ray(Vec3(0.5f, 0, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE_FALSE(result.has_value());
   }
 
@@ -177,7 +177,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(1, 0, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
   }
 
@@ -185,7 +185,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(1.001f, 0, 1), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE_FALSE(result.has_value());
   }
 
@@ -193,16 +193,16 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 1), Vec3(1, 0, 1), Vec3(0.5f, 1, 1));
     Ray ray(Vec3(0.5f, 0.5f, 0), Vec3(0, 0, 1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->point.z == Approx(1.0f));
   }
 
   SECTION("21. Negative ray direction components") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
-    Ray ray(Vec3(1, 1, 1), Vec3(-0.5f, -0.5f, -1).normalize());
+    Ray ray(Vec3(1, 1, 1), Vec3(-0.5f, -0.5f, -1).get_normalized());
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
   }
 
@@ -210,7 +210,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 1), Vec3(1, 0, 1), Vec3(0, 1, 1));
     Ray ray(Vec3(0.25f, 0.25f, -2), Vec3(0, 0, 1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
     REQUIRE(result->t == Approx(3.0f));
   }
@@ -219,7 +219,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.5f, 0.5f, 1), Vec3(0, 0, -0.001f));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
   }
 
@@ -227,7 +227,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(1, 0, 0), Vec3(0, 1, 0));
     Ray ray(Vec3(0.25f, 0.25f, 1e-7f), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
   }
 
@@ -235,7 +235,7 @@ TEST_CASE("Ray-Triangle Intersection Tests", "[geometry]") {
     Triangle tri(Vec3(0, 0, 0), Vec3(3, 0, 0), Vec3(0, 3, 0));
     Ray ray(Vec3(1, 1, 2), Vec3(0, 0, -1));
 
-    auto result = rayTriangleIntersection(ray, tri);
+    auto result = ray_triangle_intersection(ray, tri);
     REQUIRE(result.has_value());
 
     float u = result->barycentric.y;
