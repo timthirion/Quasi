@@ -52,7 +52,10 @@ jobs:
           libxinerama-dev \
           libxcursor-dev \
           libxi-dev \
-          libgl1-mesa-dev
+          libgl1-mesa-dev \
+          libwayland-dev \
+          libxkbcommon-dev \
+          wayland-protocols
     
     - name: Configure CMake
       run: |
