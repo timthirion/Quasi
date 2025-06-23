@@ -1,4 +1,4 @@
-#include "Vec3.h"
+#include "vec3.hpp"
 
 namespace Q {
   namespace geometry {

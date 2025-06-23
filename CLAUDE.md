@@ -38,7 +38,12 @@ cmake --build .
 
 ## Code Architecture
 
-- **Core geometry**: `src/geometry.h` and `src/geometry.cpp` - Ray-triangle intersection and vector math
+- **Unified library**: Single `libquasi` library containing all core functionality
+- **Core modules**: 
+  - `geometry/` - Ray-triangle intersection, vector math, geometric primitives
+  - `radiometry/` - Color, camera, and rendering utilities  
+  - `io/` - File I/O including PPM image writing
+  - `materials/` - Texture system with base class and implementations
 - **Dependencies**: Managed via CMake ExternalProjects in `3rdparty/`
   - GLFW (windowing) - included as git submodule
   - Catch2 (testing framework) - included as git submodule
@@ -70,6 +75,8 @@ External dependencies are built automatically via CMake ExternalProjects:
 - **Classes and structs**: Use `PascalCase` (e.g., `Vec3`, `Ray`, `Triangle`)
 - **Constants**: Use `UPPER_SNAKE_CASE` (e.g., `EPSILON`, `MAX_ITERATIONS`)
 - **Namespaces**: Use `lowercase` (e.g., `geometry`, `rendering`)
+- **Files**: Use `lowercase` with underscores for separation (e.g., `vec3.hpp`, `ppm_writer.hpp`)
+- **Headers**: Use `.hpp` extension for all header files
 
 ### Code Organization
 - **File Structure**: Generally use one class per header/source file pair unless classes are very simple or always work together
@@ -79,12 +86,20 @@ External dependencies are built automatically via CMake ExternalProjects:
 - **Clarity**: Prefer explicit over implicit when it improves clarity
 
 ### File Naming Convention
-- Class files should match the class name: `Vec3.h`/`Vec3.cpp`, `Ray.h`/`Ray.cpp`, `Sphere.h`/`Sphere.cpp`
-- Geometry classes are organized in the `src/geometry/` directory
-- Each class should have its own header and source file for better modularity
+- **All files use lowercase**: `vec3.hpp`/`vec3.cpp`, `ray.hpp`/`ray.cpp`, `sphere.hpp`/`sphere.cpp`
+- **Header extension**: Use `.hpp` for all header files
+- **Source extension**: Use `.cpp` for all source files  
+- **Module organization**: Classes organized in module directories (e.g., `src/geometry/`, `src/radiometry/`)
+- **Include style**: External consumers use `#include <quasi/module/file.hpp>` format
+- **One class per file**: Each class has its own header and source file for better modularity
 
 ### Example
 ```cpp
+// External consumers use namespaced includes
+#include <quasi/geometry/geometry.hpp>
+#include <quasi/radiometry/color.hpp>
+#include <quasi/materials/texture.hpp>
+
 namespace Q {
 namespace geometry {
   
@@ -101,3 +116,15 @@ namespace geometry {
 } // namespace geometry
 } // namespace Q
 ```
+
+## Project Rules
+
+### File Naming Requirements
+- **All header files must use .hpp extension** - No .h files allowed
+- **All file names must be lowercase** - Use underscores for word separation (e.g., `ppm_writer.hpp`)
+- **External includes use quasi/ prefix** - Applications should include `<quasi/module/file.hpp>`
+
+### Library Architecture  
+- **Unified libquasi**: Single library contains all core functionality
+- **Modular organization**: Code organized into logical modules (geometry, radiometry, io, materials)
+- **Clean external API**: External consumers use standardized `quasi/` include paths

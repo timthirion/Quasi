@@ -8,8 +8,7 @@ add_executable(quasi_tests
 )
 target_link_libraries(quasi_tests PRIVATE 
     Catch2::Catch2WithMain
-    geometry
-    materials
+    quasi
 )
 target_compile_features(quasi_tests PRIVATE cxx_std_23)
 
