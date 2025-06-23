@@ -6,6 +6,9 @@ build/
 # Claude Code configuration
 .claude/
 
+# JetBrains IDEs (IntelliJ, CLion, etc.)
+.idea/
+
 # Metal build artifacts
 *.metallib
 *.air
