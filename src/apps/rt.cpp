@@ -1,81 +1,14 @@
 #include "../geometry/geometry.h"
-#include <algorithm>
-#include <cmath>
-#include <fstream>
+#include "../io/PPMWriter.h"
+#include "../radiometry/Camera.h"
+#include "../radiometry/Color.h"
 #include <iostream>
 #include <limits>
 #include <vector>
 
 using namespace Q::geometry;
-
-struct Color {
-  float r, g, b;
-
-  Color() : r(0), g(0), b(0) {}
-  Color(float r, float g, float b) : r(r), g(g), b(b) {}
-
-  // Convert to 0-255 range for PPM
-  int r_int() const { return static_cast<int>(std::clamp(r * 255.0f, 0.0f, 255.0f)); }
-  int g_int() const { return static_cast<int>(std::clamp(g * 255.0f, 0.0f, 255.0f)); }
-  int b_int() const { return static_cast<int>(std::clamp(b * 255.0f, 0.0f, 255.0f)); }
-};
-
-class PPMWriter {
-public:
-  static void write_ppm(const std::string &filename, const std::vector<Color> &pixels, int width,
-                        int height) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-      std::cerr << "Error: Could not open file " << filename << " for writing" << std::endl;
-      return;
-    }
-
-    // PPM header
-    file << "P3\n";
-    file << width << " " << height << "\n";
-    file << "255\n";
-
-    // Pixel data
-    for (int y = 0; y < height; ++y) {
-      for (int x = 0; x < width; ++x) {
-        const Color &pixel = pixels[y * width + x];
-        file << pixel.r_int() << " " << pixel.g_int() << " " << pixel.b_int() << " ";
-      }
-      file << "\n";
-    }
-
-    file.close();
-    std::cout << "Image written to " << filename << std::endl;
-  }
-};
-
-class Camera {
-private:
-  Vec3 origin;
-  Vec3 lower_left_corner;
-  Vec3 horizontal;
-  Vec3 vertical;
-
-public:
-  Camera(Vec3 look_from, Vec3 look_at, Vec3 vup, float vfov, float aspect_ratio) {
-    float theta = vfov * M_PI / 180.0f;
-    float half_height = std::tan(theta / 2.0f);
-    float half_width = aspect_ratio * half_height;
-
-    origin = look_from;
-    Vec3 w = (look_from - look_at).get_normalized();
-    Vec3 u = vup.cross_product(w).get_normalized();
-    Vec3 v = w.cross_product(u);
-
-    lower_left_corner = origin - u * half_width - v * half_height - w;
-    horizontal = u * (2.0f * half_width);
-    vertical = v * (2.0f * half_height);
-  }
-
-  Ray get_ray(float u, float v) const {
-    return Ray(origin, lower_left_corner + horizontal * u + vertical * v - origin);
-  }
-};
+using namespace Q::radiometry;
+using namespace Q::io;
 
 struct ColoredSphere {
   Sphere sphere;
