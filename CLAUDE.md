@@ -72,10 +72,16 @@ External dependencies are built automatically via CMake ExternalProjects:
 - **Namespaces**: Use `lowercase` (e.g., `geometry`, `rendering`)
 
 ### Code Organization
-- Header files should use `#pragma once` for include guards
-- Place all implementation in `.cpp` files when possible
-- Use meaningful, descriptive names that clearly indicate purpose
-- Prefer explicit over implicit when it improves clarity
+- **File Structure**: Generally use one class per header/source file pair unless classes are very simple or always work together
+- **Header files**: Should use `#pragma once` for include guards
+- **Implementation**: Place all implementation in `.cpp` files when possible
+- **Naming**: Use meaningful, descriptive names that clearly indicate purpose
+- **Clarity**: Prefer explicit over implicit when it improves clarity
+
+### File Naming Convention
+- Class files should match the class name: `Vec3.h`/`Vec3.cpp`, `Ray.h`/`Ray.cpp`, `Sphere.h`/`Sphere.cpp`
+- Geometry classes are organized in the `src/geometry/` directory
+- Each class should have its own header and source file for better modularity
 
 ### Example
 ```cpp

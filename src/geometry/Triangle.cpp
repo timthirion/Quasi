@@ -1,7 +1,24 @@
-#include "geometry.h"
+#include "Triangle.h"
 
 namespace Q {
   namespace geometry {
+
+    Triangle::Triangle(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2) : v0(v0), v1(v1), v2(v2) {}
+
+    Vec3 Triangle::get_normal() const {
+      Vec3 edge1 = v1 - v0;
+      Vec3 edge2 = v2 - v0;
+      return edge1.cross_product(edge2).get_normalized();
+    }
+
+    Vec3 Triangle::get_center() const {
+      return (v0 + v1 + v2) * (1.0f / 3.0f);
+    }
+
+    IntersectionResult::IntersectionResult() : hit(false), t(0), point(), barycentric() {}
+
+    IntersectionResult::IntersectionResult(float t, const Vec3 &point, const Vec3 &barycentric)
+        : hit(true), t(t), point(point), barycentric(barycentric) {}
 
     std::optional<IntersectionResult> ray_triangle_intersection(const Ray &ray,
                                                                 const Triangle &triangle) {
