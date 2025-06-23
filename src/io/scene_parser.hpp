@@ -37,11 +37,25 @@ namespace Q {
       Q::radiometry::Color color;
     };
 
+    struct SceneBox {
+      Q::geometry::Vec3 min_corner;
+      Q::geometry::Vec3 max_corner;
+      Q::radiometry::Color color;
+    };
+
+    struct SceneLight {
+      Q::geometry::Vec3 position;
+      Q::radiometry::Color color;
+      float intensity;
+    };
+
     struct SceneData {
       SceneCamera camera;
       RenderSettings render;
       BackgroundSettings background;
       std::vector<SceneSphere> spheres;
+      std::vector<SceneBox> boxes;
+      std::vector<SceneLight> lights;
     };
 
     class SceneParser {
@@ -63,6 +77,9 @@ namespace Q {
                                                         const std::string &key);
       static void parse_spheres_from_json(const std::string &content,
                                           std::vector<SceneSphere> &spheres);
+      static void parse_boxes_from_json(const std::string &content, std::vector<SceneBox> &boxes);
+      static void parse_lights_from_json(const std::string &content,
+                                         std::vector<SceneLight> &lights);
     };
 
   } // namespace io

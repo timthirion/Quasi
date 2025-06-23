@@ -1,10 +1,15 @@
 #pragma once
 
+#include "../geometry/box.hpp"
 #include "../geometry/geometry.hpp"
 #include "../io/scene_parser.hpp"
+#include "../lighting/light.hpp"
+#include "../lighting/phong.hpp"
 #include "../materials/checkerboard_texture.hpp"
+#include "../materials/material.hpp"
 #include "../radiometry/camera.hpp"
 #include "../radiometry/color.hpp"
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -13,10 +18,18 @@ namespace Q {
 
     struct ColoredSphere {
       Q::geometry::Sphere sphere;
-      Q::radiometry::Color color;
+      std::shared_ptr<Q::materials::Material> material;
 
-      ColoredSphere(const Q::geometry::Sphere &s, const Q::radiometry::Color &c)
-          : sphere(s), color(c) {}
+      ColoredSphere(const Q::geometry::Sphere &s, std::shared_ptr<Q::materials::Material> mat)
+          : sphere(s), material(mat) {}
+    };
+
+    struct ColoredBox {
+      Q::geometry::Box box;
+      std::shared_ptr<Q::materials::Material> material;
+
+      ColoredBox(const Q::geometry::Box &b, std::shared_ptr<Q::materials::Material> mat)
+          : box(b), material(mat) {}
     };
 
     struct TexturedTriangle {
@@ -33,7 +46,9 @@ namespace Q {
     class Scene {
     private:
       std::vector<ColoredSphere> spheres;
+      std::vector<ColoredBox> boxes;
       std::vector<TexturedTriangle> background_triangles;
+      std::vector<std::shared_ptr<Q::lighting::Light>> lights;
       std::unique_ptr<Q::materials::CheckerboardTexture> background_texture;
 
     public:
@@ -46,7 +61,10 @@ namespace Q {
       // Constructor from JSON file
       static Scene from_file(const std::string &filename);
 
-      void add_sphere(const Q::geometry::Sphere &sphere, const Q::radiometry::Color &color);
+      void add_sphere(const Q::geometry::Sphere &sphere,
+                      std::shared_ptr<Q::materials::Material> material);
+      void add_box(const Q::geometry::Box &box, std::shared_ptr<Q::materials::Material> material);
+      void add_light(std::shared_ptr<Q::lighting::Light> light);
       Q::radiometry::Color trace_ray(const Q::geometry::Ray &ray) const;
 
     private:

@@ -9,6 +9,8 @@ add_library(quasi
     geometry/triangle.hpp
     geometry/sphere.cpp
     geometry/sphere.hpp
+    geometry/box.cpp
+    geometry/box.hpp
     geometry/geometry.hpp
     
     # Radiometry module (header-only)
@@ -20,9 +22,15 @@ add_library(quasi
     io/scene_parser.hpp
     io/scene_parser.cpp
     
-    # Materials module (header-only)
+    # Materials module
     materials/texture.hpp
     materials/checkerboard_texture.hpp
+    materials/material.hpp
+    
+    # Lighting module
+    lighting/light.hpp
+    lighting/phong.hpp
+    lighting/phong.cpp
     
     # Scene module
     scene/scene.hpp
@@ -35,6 +43,7 @@ file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/geometry)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/radiometry)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/io)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/materials)
+file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/lighting)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/scene)
 
 # Create custom targets to copy and transform headers
@@ -49,6 +58,10 @@ add_custom_target(copy_headers
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/radiometry/camera.hpp ${QUASI_INCLUDE_DIR}/quasi/radiometry/camera.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/texture.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/texture.hpp  
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/checkerboard_texture.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/checkerboard_texture.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/material.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/material.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/box.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/box.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/light.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/light.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/phong.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/phong.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io/scene_parser.hpp ${QUASI_INCLUDE_DIR}/quasi/io/scene_parser.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.hpp ${QUASI_INCLUDE_DIR}/quasi/scene/scene.hpp
 )
@@ -68,6 +81,7 @@ install(DIRECTORY geometry/ DESTINATION include/quasi/geometry FILES_MATCHING PA
 install(DIRECTORY radiometry/ DESTINATION include/quasi/radiometry FILES_MATCHING PATTERN "*.hpp")
 install(DIRECTORY io/ DESTINATION include/quasi/io FILES_MATCHING PATTERN "*.hpp")
 install(DIRECTORY materials/ DESTINATION include/quasi/materials FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY lighting/ DESTINATION include/quasi/lighting FILES_MATCHING PATTERN "*.hpp")
 install(DIRECTORY scene/ DESTINATION include/quasi/scene FILES_MATCHING PATTERN "*.hpp")
 
 # Install the library

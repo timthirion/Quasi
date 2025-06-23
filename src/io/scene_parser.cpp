@@ -40,8 +40,10 @@ namespace Q {
         scene.background.columns = static_cast<int>(parse_float_from_json(content, "\"columns\""));
         scene.background.distance = parse_float_from_json(content, "\"distance\"");
 
-        // Parse objects (spheres)
+        // Parse objects
         parse_spheres_from_json(content, scene.spheres);
+        parse_boxes_from_json(content, scene.boxes);
+        parse_lights_from_json(content, scene.lights);
 
       } catch (const std::exception &e) {
         throw std::runtime_error("Error parsing scene file: " + std::string(e.what()));
@@ -198,6 +200,119 @@ namespace Q {
           sphere.radius = parse_float_from_json(obj_content, "\"radius\"");
           sphere.color = parse_color_from_json(obj_content, "\"color\"");
           spheres.push_back(sphere);
+        }
+
+        pos = obj_end + 1;
+      }
+    }
+
+    void SceneParser::parse_boxes_from_json(const std::string &content,
+                                            std::vector<SceneBox> &boxes) {
+      // Find the boxes array
+      auto boxes_pos = content.find("\"boxes\"");
+      if (boxes_pos == std::string::npos) {
+        return; // No boxes defined
+      }
+
+      auto array_start = content.find("[", boxes_pos);
+      if (array_start == std::string::npos) {
+        return;
+      }
+
+      // Find matching closing bracket
+      int bracket_count = 0;
+      auto array_end = array_start;
+      for (size_t i = array_start; i < content.length(); i++) {
+        if (content[i] == '[')
+          bracket_count++;
+        else if (content[i] == ']') {
+          bracket_count--;
+          if (bracket_count == 0) {
+            array_end = i;
+            break;
+          }
+        }
+      }
+
+      std::string boxes_content = content.substr(array_start + 1, array_end - array_start - 1);
+
+      // Parse each box object
+      size_t pos = 0;
+      while (pos < boxes_content.length()) {
+        auto obj_start = boxes_content.find("{", pos);
+        if (obj_start == std::string::npos)
+          break;
+
+        auto obj_end = boxes_content.find("}", obj_start);
+        if (obj_end == std::string::npos)
+          break;
+
+        std::string obj_content = boxes_content.substr(obj_start, obj_end - obj_start + 1);
+
+        // Check if it's a box
+        if (obj_content.find("\"box\"") != std::string::npos) {
+          SceneBox box;
+          box.min_corner = parse_vec3_from_json(obj_content, "\"min\"");
+          box.max_corner = parse_vec3_from_json(obj_content, "\"max\"");
+          box.color = parse_color_from_json(obj_content, "\"color\"");
+          boxes.push_back(box);
+        }
+
+        pos = obj_end + 1;
+      }
+    }
+
+    void SceneParser::parse_lights_from_json(const std::string &content,
+                                             std::vector<SceneLight> &lights) {
+      // Find the lights array
+      auto lights_pos = content.find("\"lights\"");
+      if (lights_pos == std::string::npos) {
+        return; // No lights defined
+      }
+
+      auto array_start = content.find("[", lights_pos);
+      if (array_start == std::string::npos) {
+        return;
+      }
+
+      // Find matching closing bracket
+      int bracket_count = 0;
+      auto array_end = array_start;
+      for (size_t i = array_start; i < content.length(); i++) {
+        if (content[i] == '[')
+          bracket_count++;
+        else if (content[i] == ']') {
+          bracket_count--;
+          if (bracket_count == 0) {
+            array_end = i;
+            break;
+          }
+        }
+      }
+
+      std::string lights_content = content.substr(array_start + 1, array_end - array_start - 1);
+
+      // Parse each light object
+      size_t pos = 0;
+      while (pos < lights_content.length()) {
+        auto obj_start = lights_content.find("{", pos);
+        if (obj_start == std::string::npos)
+          break;
+
+        auto obj_end = lights_content.find("}", obj_start);
+        if (obj_end == std::string::npos)
+          break;
+
+        std::string obj_content = lights_content.substr(obj_start, obj_end - obj_start + 1);
+
+        // Check if it's a light
+        if (obj_content.find("\"light\"") != std::string::npos ||
+            obj_content.find("\"point_light\"") != std::string::npos) {
+          SceneLight light;
+          light.position = parse_vec3_from_json(obj_content, "\"position\"");
+          light.color = parse_color_from_json(obj_content, "\"color\"");
+          light.intensity = parse_float_from_json(obj_content, "\"intensity\"");
+          lights.push_back(light);
         }
 
         pos = obj_end + 1;
