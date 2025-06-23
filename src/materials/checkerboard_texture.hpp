@@ -10,32 +10,40 @@ namespace Q {
     class CheckerboardTexture : public Texture {
     private:
       Q::radiometry::Color color1, color2;
-      int checks_u, checks_v;
+      int rows, columns;
 
     public:
-      CheckerboardTexture(const Q::radiometry::Color &c1, const Q::radiometry::Color &c2,
-                          int u_checks, int v_checks)
-          : color1(c1), color2(c2), checks_u(u_checks), checks_v(v_checks) {}
+      CheckerboardTexture(const Q::radiometry::Color &color1, const Q::radiometry::Color &color2,
+                          int rows, int columns)
+          : color1(color1), color2(color2), rows(rows), columns(columns) {}
 
       Q::radiometry::Color sample(float u, float v) const override {
-        // Clamp UV coordinates to [0, 1] to handle edge cases
-        u = std::fmax(0.0f, std::fmin(1.0f, u));
-        v = std::fmax(0.0f, std::fmin(1.0f, v));
+        // Wrap UV coordinates to [0,1) range (ensure we never hit exactly 1.0)
+        u = u - std::floor(u);
+        v = v - std::floor(v);
+        if (u >= 1.0f)
+          u = 0.0f;
+        if (v >= 1.0f)
+          v = 0.0f;
 
-        // Calculate which checker square we're in
-        int u_checker = static_cast<int>(std::floor(u * checks_u));
-        int v_checker = static_cast<int>(std::floor(v * checks_v));
+        // Convert UV to grid coordinates
+        int grid_u = static_cast<int>(u * columns);
+        int grid_v = static_cast<int>(v * rows);
 
-        // Handle edge case where u or v equals 1.0
-        if (u_checker >= checks_u)
-          u_checker = checks_u - 1;
-        if (v_checker >= checks_v)
-          v_checker = checks_v - 1;
+        // Ensure grid coordinates are within bounds
+        grid_u = std::max(0, std::min(grid_u, columns - 1));
+        grid_v = std::max(0, std::min(grid_v, rows - 1));
 
-        // Checkerboard pattern: alternate colors based on sum of checker indices
-        bool is_even = (u_checker + v_checker) % 2 == 0;
+        // Determine checkerboard pattern (alternating colors)
+        bool is_even = (grid_u + grid_v) % 2 == 0;
         return is_even ? color1 : color2;
       }
+
+      // Getters for inspection/testing
+      const Q::radiometry::Color &get_color1() const { return color1; }
+      const Q::radiometry::Color &get_color2() const { return color2; }
+      int get_rows() const { return rows; }
+      int get_columns() const { return columns; }
     };
 
   } // namespace materials
