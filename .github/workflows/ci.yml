@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Configure git for HTTPS
+      run: |
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
+        git config --global url."https://".insteadOf "git://"
+    
+    - name: Verify submodules
+      run: |
+        echo "Checking submodule status:"
+        git submodule status
+        echo "Verifying GLFW directory:"
+        ls -la 3rdparty/glfw/ || echo "GLFW directory not found"
+        echo "Verifying Catch2 directory:"
+        ls -la 3rdparty/catch2/ || echo "Catch2 directory not found"
+    
+    - name: Initialize submodules if needed
+      run: |
+        if [ ! -f "3rdparty/glfw/CMakeLists.txt" ] || [ ! -f "3rdparty/catch2/CMakeLists.txt" ]; then
+          echo "Submodules not properly initialized, manually initializing..."
+          git submodule update --init --recursive
+        else
+          echo "Submodules already initialized"
+        fi
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          pkg-config \
+          libx11-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libgl1-mesa-dev \
+          libwayland-dev \
+          libxkbcommon-dev \
+          wayland-protocols
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    
+    - name: Build
+      run: |
+        cd build
+        ninja
+    
+    - name: List build contents
+      run: |
+        cd build
+        echo "Build directory structure:"
+        find . -name "*test*" -type f
+        echo "Looking for test executables:"
+        find . -name "quasi_tests" -type f
+    
+    - name: Run tests
+      run: |
+        cd build
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests
+        else
+          echo "Test executable not found at expected path. Searching..."
+          find . -name "quasi_tests" -exec {} \;
+        fi
+    
+    - name: Run tests with verbose output
+      if: failure()
+      run: |
+        cd build
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests --success --verbose
+        else
+          echo "Test executable not found for verbose run"
+        fi
+
+  test-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Configure git for HTTPS
+      run: |
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
+        git config --global url."https://".insteadOf "git://"
+    
+    - name: Verify submodules
+      run: |
+        echo "Checking submodule status:"
+        git submodule status
+        echo "Verifying GLFW directory:"
+        ls -la 3rdparty/glfw/ || echo "GLFW directory not found"
+        echo "Verifying Catch2 directory:"
+        ls -la 3rdparty/catch2/ || echo "Catch2 directory not found"
+    
+    - name: Initialize submodules if needed
+      run: |
+        if [ ! -f "3rdparty/glfw/CMakeLists.txt" ] || [ ! -f "3rdparty/catch2/CMakeLists.txt" ]; then
+          echo "Submodules not properly initialized, manually initializing..."
+          git submodule update --init --recursive
+        else
+          echo "Submodules already initialized"
+        fi
+    
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+    
+    - name: Build
+      run: |
+        cd build
+        ninja
+    
+    - name: List build contents
+      run: |
+        cd build
+        echo "Build directory structure:"
+        find . -name "*test*" -type f
+        echo "Looking for test executables:"
+        find . -name "quasi_tests" -type f
+    
+    - name: Run tests
+      run: |
+        cd build
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests
+        else
+          echo "Test executable not found at expected path. Searching..."
+          find . -name "quasi_tests" -exec {} \;
+        fi
+    
+    - name: Run tests with verbose output
+      if: failure()
+      run: |
+        cd build
+        if [ -f "./quasi-build/tests/quasi_tests" ]; then
+          ./quasi-build/tests/quasi_tests --success --verbose
+        else
+          echo "Test executable not found for verbose run"
+        fi
