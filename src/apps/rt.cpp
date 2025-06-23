@@ -137,14 +137,14 @@ int main() {
   // Scene setup with three spheres
   Scene scene;
 
-  // Left sphere (red) - positioned at x = -2
-  scene.add_sphere(Sphere(Vec3(-2.0f, 0.0f, -3.0f), 0.8f), Color(1.0f, 0.0f, 0.0f));
+  // Left sphere (red) - positioned at x = -1.8
+  scene.add_sphere(Sphere(Vec3(-1.8f, 0.0f, -4.0f), 0.6f), Color(1.0f, 0.0f, 0.0f));
 
   // Middle sphere (green) - positioned at x = 0
-  scene.add_sphere(Sphere(Vec3(0.0f, 0.0f, -3.0f), 0.8f), Color(0.0f, 1.0f, 0.0f));
+  scene.add_sphere(Sphere(Vec3(0.0f, 0.0f, -4.0f), 0.6f), Color(0.0f, 1.0f, 0.0f));
 
-  // Right sphere (blue) - positioned at x = 2
-  scene.add_sphere(Sphere(Vec3(2.0f, 0.0f, -3.0f), 0.8f), Color(0.0f, 0.0f, 1.0f));
+  // Right sphere (blue) - positioned at x = 1.8
+  scene.add_sphere(Sphere(Vec3(1.8f, 0.0f, -4.0f), 0.6f), Color(0.0f, 0.0f, 1.0f));
 
   // Render the image
   std::vector<Color> pixels(image_width * image_height);
