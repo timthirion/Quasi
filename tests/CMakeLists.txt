@@ -3,6 +3,7 @@ find_package(Catch2 3 REQUIRED)
 add_executable(quasi_tests 
     test_basic.cpp
     test_ray_triangle_intersection.cpp
+    test_ray_sphere_intersection.cpp
 )
 target_link_libraries(quasi_tests PRIVATE 
     Catch2::Catch2WithMain
