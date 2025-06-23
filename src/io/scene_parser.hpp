@@ -43,6 +43,13 @@ namespace Q {
       Q::radiometry::Color color;
     };
 
+    struct SceneTriangle {
+      Q::geometry::Vec3 vertex1;
+      Q::geometry::Vec3 vertex2;
+      Q::geometry::Vec3 vertex3;
+      Q::radiometry::Color color;
+    };
+
     struct SceneLight {
       Q::geometry::Vec3 position;
       Q::radiometry::Color color;
@@ -54,6 +61,7 @@ namespace Q {
       RenderSettings render;
       BackgroundSettings background;
       std::vector<SceneSphere> spheres;
+      std::vector<SceneTriangle> triangles;
       std::vector<SceneBox> boxes;
       std::vector<SceneLight> lights;
     };
@@ -77,6 +85,8 @@ namespace Q {
                                                         const std::string &key);
       static void parse_spheres_from_json(const std::string &content,
                                           std::vector<SceneSphere> &spheres);
+      static void parse_triangles_from_json(const std::string &content,
+                                            std::vector<SceneTriangle> &triangles);
       static void parse_boxes_from_json(const std::string &content, std::vector<SceneBox> &boxes);
       static void parse_lights_from_json(const std::string &content,
                                          std::vector<SceneLight> &lights);

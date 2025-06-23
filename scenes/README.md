@@ -1,46 +1,66 @@
-# Scene Files
+# Scene Collection
 
-This directory contains JSON scene files for the Quasi raytracer.
+This directory contains test scenes for the Quasi ray tracer, showcasing different rendering features including basic geometry, lighting, and the Cornell Box.
 
-## Available Scenes
+## Core Scenes
+
+### `cornell_box.json`
+- **Complete Cornell Box scene** with Phong lighting
+- Red left wall, green right wall, white ceiling/floor/back wall
+- White sphere and two white rectangular boxes
+- Point light source at (0, 0.8, 0) with intensity 2.0
+- Demonstrates: box primitives, triangle rendering, Phong lighting, point lights
+- Resolution: 256x256
+
+### `basic_lighting_test.json`
+- **Simple lighting test** with single sphere and point light
+- White sphere with point light for debugging lighting calculations
+- Minimal scene for testing Phong lighting implementation
+- Resolution: 128x128
+
+## Test & Demo Scenes
 
 ### `default_scene.json`
-The original three-sphere scene that was hardcoded in rt.cpp, now defined in JSON format.
-- 3 spheres (red, green, blue)
-- 800x600 resolution
-- 6x8 checkerboard background
-
-### `five_spheres.json`
-A more complex scene demonstrating the flexibility of the JSON format.
-- 5 spheres of varying sizes and colors
-- 1200x800 resolution
-- Elevated camera position
-- 10x12 checkerboard background
+- Simple sphere with checkerboard background
+- Good for basic functionality testing without lighting
 
 ### `sphere_collection.json`
-A collection of 6 spheres with mixed sizes and colors.
-- 800x800 square resolution
-- Dark checkerboard background
-- Various sphere positions and colors
+- Multiple spheres of different sizes and colors
+- Tests sphere rendering and intersection
 
 ### `sphere_test_scene.json`
-A 5-sphere test scene with traditional positioning.
-- 600x600 square resolution
-- Conservative camera setup
+- Single sphere test scene
+- Minimal scene for debugging
 
-## Limitations
+### `five_spheres.json`
+- Five spheres arranged in a pattern
+- Tests multiple object rendering
 
-**Note**: The current raytracer only supports spheres and checkerboard backgrounds. To implement the actual Cornell Box dataset, we would need to add support for:
-- Box/cuboid primitives
-- Room geometry (planes/walls)
-- Material properties (diffuse colors for walls)
-- Area lighting
-- More sophisticated lighting model
+## Features Demonstrated
 
-The Cornell Box is a specific computer graphics test scene consisting of a room with two cuboid boxes inside, not spheres.
+- **Sphere primitives** - Ray-sphere intersection
+- **Box primitives** - Decomposed into 12 triangles (6 faces × 2 triangles)
+- **Triangle rendering** - Ray-triangle intersection using Möller-Trumbore algorithm
+- **Phong lighting** - Ambient + diffuse + specular components
+- **Point lights** - Position-based illumination with intensity control
+- **Material system** - Solid color materials with lighting properties
+- **Cornell Box** - Standard computer graphics test scene
 
 ## Usage
 
+To render a scene:
 ```bash
-./rt scenes/scene_name.json
+./quasi-build/src/apps/rt <scene_file.json> <output.ppm>
+```
+
+Examples:
+```bash
+# Render Cornell Box with lighting
+./quasi-build/src/apps/rt scenes/cornell_box.json cornell_box.ppm
+
+# Test basic lighting
+./quasi-build/src/apps/rt scenes/basic_lighting_test.json lighting_test.ppm
+
+# Simple sphere test
+./quasi-build/src/apps/rt scenes/default_scene.json basic_test.ppm
 ```

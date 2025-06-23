@@ -27,6 +27,21 @@ int main(int argc, char *argv[]) {
     auto scene_data = SceneParser::parse_scene_file(scene_filename);
     Scene scene(scene_data);
 
+    // Remove triangle test for sphere test
+
+    // TEST: Print first few rays to see what's happening
+    Camera test_camera(scene_data.camera.position, scene_data.camera.look_at, scene_data.camera.up,
+                       scene_data.camera.fov, 1.0f);
+    for (int i = 0; i < 3; i++) {
+      float u = 0.5f; // center
+      float v = 0.5f; // center
+      Ray test_ray = test_camera.get_ray(u, v);
+      std::cout << "Center ray: origin(" << test_ray.origin.x << "," << test_ray.origin.y << ","
+                << test_ray.origin.z << ") dir(" << test_ray.direction.x << ","
+                << test_ray.direction.y << "," << test_ray.direction.z << ")" << std::endl;
+      break;
+    }
+
     // Create camera from scene data
     float aspect_ratio =
         static_cast<float>(scene_data.render.width) / static_cast<float>(scene_data.render.height);
@@ -59,7 +74,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Write the image to file
-    PPMWriter::write_ppm("raytraced_spheres.ppm", pixels, scene_data.render.width,
+    std::string output_filename = "raytraced_spheres.ppm";
+    if (argc > 2) {
+      output_filename = argv[2];
+    }
+    PPMWriter::write_ppm(output_filename, pixels, scene_data.render.width,
                          scene_data.render.height);
 
     std::cout << "Raytracing complete!" << std::endl;

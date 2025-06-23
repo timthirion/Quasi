@@ -1,0 +1,37 @@
+{
+  "camera": {
+    "position": [0.0, 0.0, 2.0],
+    "look_at": [0.0, 0.0, 0.0],
+    "up": [0.0, 1.0, 0.0],
+    "fov": 90.0
+  },
+  "render": {
+    "width": 128,
+    "height": 128
+  },
+  "background": {
+    "type": "checkerboard",
+    "color1": [0.0, 0.0, 0.0],
+    "color2": [0.0, 0.0, 0.0],
+    "rows": 1,
+    "columns": 1,
+    "distance": 50.0
+  },
+  "objects": [
+    {
+      "type": "sphere",
+      "center": [0.0, 0.0, 0.0],
+      "radius": 0.5,
+      "color": [1.0, 0.0, 0.0]
+    }
+  ],
+  "boxes": [],
+  "lights": [
+    {
+      "type": "point_light",
+      "position": [1.0, 1.0, 1.0],
+      "color": [1.0, 1.0, 1.0],
+      "intensity": 1.0
+    }
+  ]
+}

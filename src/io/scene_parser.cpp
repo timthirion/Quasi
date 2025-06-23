@@ -42,6 +42,7 @@ namespace Q {
 
         // Parse objects
         parse_spheres_from_json(content, scene.spheres);
+        parse_triangles_from_json(content, scene.triangles);
         parse_boxes_from_json(content, scene.boxes);
         parse_lights_from_json(content, scene.lights);
 
@@ -200,6 +201,63 @@ namespace Q {
           sphere.radius = parse_float_from_json(obj_content, "\"radius\"");
           sphere.color = parse_color_from_json(obj_content, "\"color\"");
           spheres.push_back(sphere);
+        }
+
+        pos = obj_end + 1;
+      }
+    }
+
+    void SceneParser::parse_triangles_from_json(const std::string &content,
+                                                std::vector<SceneTriangle> &triangles) {
+      // Find the objects array (triangles are in objects)
+      auto objects_pos = content.find("\"objects\"");
+      if (objects_pos == std::string::npos) {
+        return; // No objects defined
+      }
+
+      auto array_start = content.find("[", objects_pos);
+      if (array_start == std::string::npos) {
+        return;
+      }
+
+      // Find matching closing bracket
+      int bracket_count = 0;
+      auto array_end = array_start;
+      for (size_t i = array_start; i < content.length(); i++) {
+        if (content[i] == '[')
+          bracket_count++;
+        else if (content[i] == ']') {
+          bracket_count--;
+          if (bracket_count == 0) {
+            array_end = i;
+            break;
+          }
+        }
+      }
+
+      std::string objects_content = content.substr(array_start + 1, array_end - array_start - 1);
+
+      // Parse each object (looking for triangle objects)
+      size_t pos = 0;
+      while (pos < objects_content.length()) {
+        auto obj_start = objects_content.find("{", pos);
+        if (obj_start == std::string::npos)
+          break;
+
+        auto obj_end = objects_content.find("}", obj_start);
+        if (obj_end == std::string::npos)
+          break;
+
+        std::string obj_content = objects_content.substr(obj_start, obj_end - obj_start + 1);
+
+        // Check if it's a triangle
+        if (obj_content.find("\"type\": \"triangle\"") != std::string::npos) {
+          SceneTriangle triangle;
+          triangle.vertex1 = parse_vec3_from_json(obj_content, "\"vertex1\"");
+          triangle.vertex2 = parse_vec3_from_json(obj_content, "\"vertex2\"");
+          triangle.vertex3 = parse_vec3_from_json(obj_content, "\"vertex3\"");
+          triangle.color = parse_color_from_json(obj_content, "\"color\"");
+          triangles.push_back(triangle);
         }
 
         pos = obj_end + 1;

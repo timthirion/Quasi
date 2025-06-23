@@ -32,6 +32,14 @@ namespace Q {
           : box(b), material(mat) {}
     };
 
+    struct ColoredTriangle {
+      Q::geometry::Triangle triangle;
+      std::shared_ptr<Q::materials::Material> material;
+
+      ColoredTriangle(const Q::geometry::Triangle &t, std::shared_ptr<Q::materials::Material> mat)
+          : triangle(t), material(mat) {}
+    };
+
     struct TexturedTriangle {
       Q::geometry::Triangle triangle;
       Q::geometry::Vec3 uv0, uv1, uv2; // UV coordinates for each vertex (z component unused)
@@ -46,6 +54,7 @@ namespace Q {
     class Scene {
     private:
       std::vector<ColoredSphere> spheres;
+      std::vector<ColoredTriangle> triangles;
       std::vector<ColoredBox> boxes;
       std::vector<TexturedTriangle> background_triangles;
       std::vector<std::shared_ptr<Q::lighting::Light>> lights;
@@ -63,6 +72,8 @@ namespace Q {
 
       void add_sphere(const Q::geometry::Sphere &sphere,
                       std::shared_ptr<Q::materials::Material> material);
+      void add_triangle(const Q::geometry::Triangle &triangle,
+                        std::shared_ptr<Q::materials::Material> material);
       void add_box(const Q::geometry::Box &box, std::shared_ptr<Q::materials::Material> material);
       void add_light(std::shared_ptr<Q::lighting::Light> light);
       Q::radiometry::Color trace_ray(const Q::geometry::Ray &ray) const;

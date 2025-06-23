@@ -15,13 +15,35 @@ namespace Q {
           scene_data.background.color1, scene_data.background.color2, scene_data.background.rows,
           scene_data.background.columns);
 
-      // Setup background geometry
-      setup_background(scene_data.background, scene_data.camera, scene_data.render);
+      // Skip background geometry setup for clean testing
 
       // Add spheres
       for (const auto &sphere_data : scene_data.spheres) {
         Q::geometry::Sphere sphere(sphere_data.center, sphere_data.radius);
-        add_sphere(sphere, sphere_data.color);
+        auto material = std::make_shared<Q::materials::SolidMaterial>(sphere_data.color);
+        add_sphere(sphere, material);
+      }
+
+      // Add triangles
+      for (const auto &triangle_data : scene_data.triangles) {
+        Q::geometry::Triangle triangle(triangle_data.vertex1, triangle_data.vertex2,
+                                       triangle_data.vertex3);
+        auto material = std::make_shared<Q::materials::SolidMaterial>(triangle_data.color);
+        add_triangle(triangle, material);
+      }
+
+      // Add boxes
+      for (const auto &box_data : scene_data.boxes) {
+        Q::geometry::Box box(box_data.min_corner, box_data.max_corner);
+        auto material = std::make_shared<Q::materials::SolidMaterial>(box_data.color);
+        add_box(box, material);
+      }
+
+      // Add lights
+      for (const auto &light_data : scene_data.lights) {
+        auto light = std::make_shared<Q::lighting::PointLight>(
+            light_data.position, light_data.color * light_data.intensity);
+        add_light(light);
       }
     }
 
@@ -30,13 +52,32 @@ namespace Q {
       return Scene(scene_data);
     }
 
-    void Scene::add_sphere(const Q::geometry::Sphere &sphere, const Q::radiometry::Color &color) {
-      spheres.emplace_back(sphere, color);
+    void Scene::add_sphere(const Q::geometry::Sphere &sphere,
+                           std::shared_ptr<Q::materials::Material> material) {
+      spheres.emplace_back(sphere, material);
+    }
+
+    void Scene::add_triangle(const Q::geometry::Triangle &triangle,
+                             std::shared_ptr<Q::materials::Material> material) {
+      triangles.emplace_back(triangle, material);
+    }
+
+    void Scene::add_box(const Q::geometry::Box &box,
+                        std::shared_ptr<Q::materials::Material> material) {
+      boxes.emplace_back(box, material);
+    }
+
+    void Scene::add_light(std::shared_ptr<Q::lighting::Light> light) {
+      lights.push_back(light);
     }
 
     Q::radiometry::Color Scene::trace_ray(const Q::geometry::Ray &ray) const {
+
       float closest_t = std::numeric_limits<float>::max();
       Q::radiometry::Color hit_color;
+      Q::geometry::Vec3 hit_point;
+      Q::geometry::Vec3 hit_normal;
+      std::shared_ptr<Q::materials::Material> hit_material = nullptr;
       bool hit_anything = false;
 
       // Check sphere intersections
@@ -45,43 +86,83 @@ namespace Q {
         if (result.has_value()) {
           // Use the near intersection point (first hit)
           float t = result->t_near;
-          if (t > 0.001f && t < closest_t) { // Small epsilon to avoid self-intersection
+          if (t > 0.001f && t < closest_t) {
             closest_t = t;
-            hit_color = colored_sphere.color;
+            hit_point = ray.origin + ray.direction * t;
+            hit_normal = (hit_point - colored_sphere.sphere.center).get_normalized();
+            hit_material = colored_sphere.material;
             hit_anything = true;
           }
         }
       }
 
-      // Check background triangle intersections (only if no sphere hit)
-      if (!hit_anything) {
-        for (const auto &textured_triangle : background_triangles) {
-          auto result = ray_triangle_intersection(ray, textured_triangle.triangle);
+      // Check triangle intersections
+      for (const auto &colored_triangle : triangles) {
+        auto result = ray_triangle_intersection(ray, colored_triangle.triangle);
+        if (result.has_value() && result->hit) {
+
+          float t = result->t;
+          if (t > 0.001f && t < closest_t) {
+            closest_t = t;
+            hit_point = ray.origin + ray.direction * t;
+            // Calculate triangle normal (ensure it points outward)
+            auto edge1 = colored_triangle.triangle.v1 - colored_triangle.triangle.v0;
+            auto edge2 = colored_triangle.triangle.v2 - colored_triangle.triangle.v0;
+            hit_normal = edge1.cross_product(edge2).get_normalized();
+
+            // Ensure normal points toward camera (for proper lighting)
+            Q::geometry::Vec3 to_camera = ray.origin - hit_point;
+            if (hit_normal.dot_product(to_camera) < 0) {
+              hit_normal = hit_normal * -1.0f; // Flip if pointing away
+            }
+            hit_material = colored_triangle.material;
+            hit_anything = true;
+          }
+        }
+      }
+
+      // Check box intersections
+      for (const auto &colored_box : boxes) {
+        const auto &triangles = colored_box.box.get_triangles();
+        for (int i = 0; i < triangles.size(); ++i) {
+          const auto &triangle = triangles[i];
+          auto result = ray_triangle_intersection(ray, triangle);
           if (result.has_value() && result->hit) {
             float t = result->t;
             if (t > 0.001f && t < closest_t) {
               closest_t = t;
+              hit_point = ray.origin + ray.direction * t;
+              // Calculate triangle normal (ensure it points outward)
+              auto edge1 = triangle.v1 - triangle.v0;
+              auto edge2 = triangle.v2 - triangle.v0;
+              hit_normal = edge1.cross_product(edge2).get_normalized();
 
-              // Interpolate UV coordinates using barycentric coordinates
-              Q::geometry::Vec3 bary = result->barycentric;
-              float u = bary.x * textured_triangle.uv0.x + bary.y * textured_triangle.uv1.x +
-                        bary.z * textured_triangle.uv2.x;
-              float v = bary.x * textured_triangle.uv0.y + bary.y * textured_triangle.uv1.y +
-                        bary.z * textured_triangle.uv2.y;
-
-              hit_color = textured_triangle.texture->sample(u, v);
+              // Ensure normal points toward camera (for proper lighting)
+              Q::geometry::Vec3 to_camera = ray.origin - hit_point;
+              if (hit_normal.dot_product(to_camera) < 0) {
+                hit_normal = hit_normal * -1.0f; // Flip if pointing away
+              }
+              hit_material = colored_box.material;
               hit_anything = true;
             }
           }
         }
       }
 
-      if (hit_anything) {
+      // If we hit something, apply Phong lighting
+      if (hit_anything && hit_material) {
+        // Calculate view direction (from hit point to camera)
+        Q::geometry::Vec3 view_direction = (ray.origin - hit_point).get_normalized();
+
+        // Apply Phong lighting
+        hit_color = Q::lighting::PhongLighting::calculate_lighting(
+            hit_point, hit_normal, view_direction, *hit_material, lights);
+
         return hit_color;
       }
 
-      // Fallback background color (should rarely be reached)
-      return Q::radiometry::Color(0.2f, 0.2f, 0.2f); // Dark gray
+      // Return solid black background
+      return Q::radiometry::Color(0.0f, 0.0f, 0.0f); // Black background
     }
 
     void Scene::setup_background(const Q::io::BackgroundSettings &bg_settings,
