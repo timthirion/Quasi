@@ -15,6 +15,18 @@ namespace Q::radiometry {
     int g_int() const { return static_cast<int>(std::clamp(g * 255.0f, 0.0f, 255.0f)); }
     int b_int() const { return static_cast<int>(std::clamp(b * 255.0f, 0.0f, 255.0f)); }
 
+    // Arithmetic operators for lighting calculations
+    Color operator+(const Color &other) const {
+      return Color(r + other.r, g + other.g, b + other.b);
+    }
+
+    Color operator*(float scalar) const { return Color(r * scalar, g * scalar, b * scalar); }
+
+    // Component-wise multiplication for lighting
+    Color operator*(const Color &other) const {
+      return Color(r * other.r, g * other.g, b * other.b);
+    }
+
     // Equality operator for testing
     bool operator==(const Color &other) const {
       return r == other.r && g == other.g && b == other.b;

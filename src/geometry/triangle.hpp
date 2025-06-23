@@ -10,6 +10,7 @@ namespace Q {
     struct Triangle {
       Vec3 v0, v1, v2;
 
+      Triangle() = default; // Default constructor
       Triangle(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2);
       Vec3 get_normal() const;
       Vec3 get_center() const;
