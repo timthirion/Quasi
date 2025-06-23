@@ -1,14 +1,16 @@
-#include "../geometry/geometry.h"
-#include "../io/PPMWriter.h"
-#include "../radiometry/Camera.h"
-#include "../radiometry/Color.h"
 #include <iostream>
 #include <limits>
+#include <quasi/geometry/geometry.h>
+#include <quasi/io/PPMWriter.h>
+#include <quasi/materials/CheckerboardTexture.h>
+#include <quasi/radiometry/Camera.h>
+#include <quasi/radiometry/Color.h>
 #include <vector>
 
 using namespace Q::geometry;
 using namespace Q::radiometry;
 using namespace Q::io;
+using namespace Q::materials;
 
 struct ColoredSphere {
   Sphere sphere;

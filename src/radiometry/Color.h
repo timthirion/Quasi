@@ -14,6 +14,11 @@ namespace Q::radiometry {
     int r_int() const { return static_cast<int>(std::clamp(r * 255.0f, 0.0f, 255.0f)); }
     int g_int() const { return static_cast<int>(std::clamp(g * 255.0f, 0.0f, 255.0f)); }
     int b_int() const { return static_cast<int>(std::clamp(b * 255.0f, 0.0f, 255.0f)); }
+
+    // Equality operator for testing
+    bool operator==(const Color &other) const {
+      return r == other.r && g == other.g && b == other.b;
+    }
   };
 
 } // namespace Q::radiometry
