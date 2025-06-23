@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Ray.h"
-#include "Vec3.h"
+#include "ray.hpp"
+#include "vec3.hpp"
 #include <optional>
 
 namespace Q {

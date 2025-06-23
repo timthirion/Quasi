@@ -1,4 +1,4 @@
-#include "Triangle.h"
+#include "triangle.hpp"
 
 namespace Q {
   namespace geometry {

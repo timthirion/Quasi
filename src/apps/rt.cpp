@@ -1,10 +1,10 @@
 #include <iostream>
 #include <limits>
-#include <quasi/geometry/geometry.h>
-#include <quasi/io/PPMWriter.h>
-#include <quasi/materials/CheckerboardTexture.h>
-#include <quasi/radiometry/Camera.h>
-#include <quasi/radiometry/Color.h>
+#include <quasi/geometry/geometry.hpp>
+#include <quasi/io/ppm_writer.hpp>
+#include <quasi/materials/checkerboard_texture.hpp>
+#include <quasi/radiometry/camera.hpp>
+#include <quasi/radiometry/color.hpp>
 #include <vector>
 
 using namespace Q::geometry;

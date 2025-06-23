@@ -1,6 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <quasi/materials/CheckerboardTexture.h>
+#include <quasi/materials/checkerboard_texture.hpp>
 
 using namespace Q::materials;
 using namespace Q::radiometry;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../geometry/geometry.h"
+#include "../geometry/geometry.hpp"
 #include <cmath>
 
 namespace Q::radiometry {

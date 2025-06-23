@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../radiometry/Color.h"
+#include "../radiometry/color.hpp"
 
 namespace Q {
   namespace materials {

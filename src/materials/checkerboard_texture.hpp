@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../radiometry/Color.h"
-#include "Texture.h"
+#include "../radiometry/color.hpp"
+#include "texture.hpp"
 #include <cmath>
 
 namespace Q {
