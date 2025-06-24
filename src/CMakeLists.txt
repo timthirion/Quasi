@@ -14,9 +14,11 @@ add_library(quasi
     geometry/reflection.hpp
     geometry/geometry.hpp
 
-    # Radiometry module (header-only)
+    # Radiometry module
     radiometry/color.hpp
     radiometry/camera.hpp
+    radiometry/depth_of_field_camera.hpp
+    radiometry/depth_of_field_camera.cpp
 
     # IO module
     io/ppm_writer.hpp

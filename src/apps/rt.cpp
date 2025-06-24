@@ -4,6 +4,7 @@
 #include <quasi/io/scene_parser.hpp>
 #include <quasi/radiometry/camera.hpp>
 #include <quasi/radiometry/color.hpp>
+#include <quasi/radiometry/depth_of_field_camera.hpp>
 #include <quasi/sampling/adaptive_integrator.hpp>
 #include <quasi/sampling/sample_integrator.hpp>
 #include <quasi/sampling/sample_pattern.hpp>
@@ -53,8 +54,25 @@ int main(int argc, char *argv[]) {
     // Create camera from scene data
     float aspect_ratio =
         static_cast<float>(scene_data.render.width) / static_cast<float>(scene_data.render.height);
-    Camera camera(scene_data.camera.position, scene_data.camera.look_at, scene_data.camera.up,
-                  scene_data.camera.fov, aspect_ratio);
+
+    // Use depth of field camera if aperture is specified, otherwise use pinhole camera
+    bool use_depth_of_field = scene_data.camera.aperture > 0.0f;
+    std::unique_ptr<Camera> pinhole_camera;
+    std::unique_ptr<DepthOfFieldCamera> dof_camera;
+
+    if (use_depth_of_field) {
+      dof_camera = std::make_unique<DepthOfFieldCamera>(
+          scene_data.camera.position, scene_data.camera.look_at, scene_data.camera.up,
+          scene_data.camera.fov, aspect_ratio, scene_data.camera.aperture,
+          scene_data.camera.focus_distance);
+      std::cout << "Using depth of field camera: aperture=" << scene_data.camera.aperture
+                << ", focus_distance=" << scene_data.camera.focus_distance << std::endl;
+    } else {
+      pinhole_camera =
+          std::make_unique<Camera>(scene_data.camera.position, scene_data.camera.look_at,
+                                   scene_data.camera.up, scene_data.camera.fov, aspect_ratio);
+      std::cout << "Using pinhole camera (no depth of field)" << std::endl;
+    }
 
     // Create sampling pattern and integrator
     std::unique_ptr<SamplePattern> sample_pattern;
@@ -105,7 +123,8 @@ int main(int argc, char *argv[]) {
                   float v = (static_cast<float>(scene_data.render.height) - sample.y) /
                             static_cast<float>(scene_data.render.height);
 
-                  Ray ray = camera.get_ray(u, v);
+                  Ray ray = use_depth_of_field ? dof_camera->get_ray(u, v)
+                                               : pinhole_camera->get_ray(u, v);
                   return ray_tracer.trace_ray_with_reflections(ray);
                 });
           } else {
@@ -127,7 +146,8 @@ int main(int argc, char *argv[]) {
             float v = (static_cast<float>(scene_data.render.height - 1 - y) + sample.y) /
                       static_cast<float>(scene_data.render.height);
 
-            Ray ray = camera.get_ray(u, v);
+            Ray ray =
+                use_depth_of_field ? dof_camera->get_ray(u, v) : pinhole_camera->get_ray(u, v);
             Color sample_color = ray_tracer.trace_ray_with_reflections(ray);
             sample_colors.push_back(sample_color);
           }

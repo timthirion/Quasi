@@ -1,0 +1,87 @@
+{
+  "camera": {
+    "position": [0.0, 0.0, 4.0],
+    "look_at": [0.0, 0.0, 0.0],
+    "up": [0.0, 1.0, 0.0],
+    "fov": 35.0,
+    "aperture": 0.2,
+    "focus_distance": 4.0
+  },
+  "render": {
+    "width": 512,
+    "height": 512,
+    "multisampling": {
+      "samples_per_pixel": 16,
+      "sampling_pattern": "blue_noise",
+      "sample_integrator": "average"
+    }
+  },
+  "background": {
+    "type": "checkerboard",
+    "color1": [0.1, 0.1, 0.1],
+    "color2": [0.1, 0.1, 0.1],
+    "rows": 1,
+    "columns": 1,
+    "distance": 50.0
+  },
+  "objects": [
+    {
+      "type": "sphere",
+      "center": [-1.0, 0.0, 2.0],
+      "radius": 0.4,
+      "color": [0.9, 0.3, 0.3],
+      "reflectance": 0.1
+    },
+    {
+      "type": "sphere",
+      "center": [0.0, 0.0, 0.0],
+      "radius": 0.5,
+      "color": [0.3, 0.9, 0.3],
+      "reflectance": 0.2
+    },
+    {
+      "type": "sphere",
+      "center": [1.2, 0.0, -2.0],
+      "radius": 0.4,
+      "color": [0.3, 0.3, 0.9],
+      "reflectance": 0.1
+    },
+    {
+      "type": "sphere",
+      "center": [-0.8, 0.8, 1.0],
+      "radius": 0.3,
+      "color": [0.9, 0.9, 0.3],
+      "reflectance": 0.3
+    },
+    {
+      "type": "sphere",
+      "center": [0.8, -0.8, -1.0],
+      "radius": 0.3,
+      "color": [0.9, 0.3, 0.9],
+      "reflectance": 0.3
+    }
+  ],
+  "boxes": [
+    {
+      "type": "box",
+      "min": [-3.0, -1.5, -5.0],
+      "max": [3.0, -1.4, 5.0],
+      "color": [0.7, 0.7, 0.7],
+      "reflectance": 0.1
+    }
+  ],
+  "lights": [
+    {
+      "type": "point_light",
+      "position": [2.0, 3.0, 2.0],
+      "color": [1.0, 1.0, 1.0],
+      "intensity": 3.0
+    },
+    {
+      "type": "point_light",
+      "position": [-2.0, 2.0, 1.0],
+      "color": [0.9, 0.95, 1.0],
+      "intensity": 2.0
+    }
+  ]
+}
