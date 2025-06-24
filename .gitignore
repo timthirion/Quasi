@@ -1,4 +1,5 @@
 build/
+output/
 # Allow git submodules in 3rdparty
 !3rdparty/glfw/
 !3rdparty/catch2/

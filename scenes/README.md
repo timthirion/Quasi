@@ -12,6 +12,13 @@ This directory contains test scenes for the Quasi ray tracer, showcasing differe
 - Demonstrates: box primitives, triangle rendering, Phong lighting, point lights
 - Resolution: 256x256
 
+### `cornell_box_hq.json`
+- **High-quality Cornell Box** - same scene as above but enhanced
+- **Resolution: 512x512** (double the original)
+- **16 samples per pixel** with stratified sampling and average integration
+- Demonstrates: multisampling anti-aliasing for superior image quality
+- Perfect for showcasing the multisampling system
+
 ### `basic_lighting_test.json`
 - **Simple lighting test** with single sphere and point light
 - White sphere with point light for debugging lighting calculations
@@ -36,6 +43,21 @@ This directory contains test scenes for the Quasi ray tracer, showcasing differe
 - Five spheres arranged in a pattern
 - Tests multiple object rendering
 
+### `multisampling_test_scene.json`
+- **Multisampling demonstration scene** with three colored spheres
+- Resolution: 400x400 with 4 samples per pixel
+- Features stratified sampling and average integration
+- Good for testing multisampling performance and quality
+
+### `high_quality_test.json`
+- **High sample count test** with single red sphere
+- Resolution: 200x200 with **16 samples per pixel**
+- Demonstrates maximum quality rendering with heavy antialiasing
+
+### `test_scene.json`
+- Simple test scene for development and debugging
+- Basic sphere and lighting setup
+
 ## Features Demonstrated
 
 - **Sphere primitives** - Ray-sphere intersection
@@ -45,6 +67,8 @@ This directory contains test scenes for the Quasi ray tracer, showcasing differe
 - **Point lights** - Position-based illumination with intensity control
 - **Material system** - Solid color materials with lighting properties
 - **Cornell Box** - Standard computer graphics test scene
+- **Multisampling anti-aliasing** - Stratified sampling with configurable sample counts
+- **Extensible sampling system** - Support for different sampling patterns and integrators
 
 ## Usage
 

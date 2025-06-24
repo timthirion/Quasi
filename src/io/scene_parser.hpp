@@ -19,9 +19,20 @@ namespace Q {
       float fov;
     };
 
+    struct MultisamplingSettings {
+      int samples_per_pixel;
+      std::string sampling_pattern;
+      std::string sample_integrator;
+
+      // Default settings
+      MultisamplingSettings()
+          : samples_per_pixel(1), sampling_pattern("stratified"), sample_integrator("average") {}
+    };
+
     struct RenderSettings {
       int width;
       int height;
+      MultisamplingSettings multisampling;
     };
 
     struct BackgroundSettings {
