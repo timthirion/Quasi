@@ -46,8 +46,12 @@ add_library(quasi
     sampling/sample_integrator.cpp
     sampling/stratified_pattern.hpp
     sampling/stratified_pattern.cpp
+    sampling/blue_noise_pattern.hpp
+    sampling/blue_noise_pattern.cpp
     sampling/average_integrator.hpp
     sampling/average_integrator.cpp
+    sampling/adaptive_integrator.hpp
+    sampling/adaptive_integrator.cpp
 )
 
 # Create include directory structure in build directory

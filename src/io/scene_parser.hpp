@@ -24,9 +24,15 @@ namespace Q {
       std::string sampling_pattern;
       std::string sample_integrator;
 
+      // Adaptive sampling parameters
+      int max_samples_per_pixel;
+      float variance_threshold;
+      int adaptation_levels;
+
       // Default settings
       MultisamplingSettings()
-          : samples_per_pixel(1), sampling_pattern("stratified"), sample_integrator("average") {}
+          : samples_per_pixel(1), sampling_pattern("stratified"), sample_integrator("average"),
+            max_samples_per_pixel(64), variance_threshold(0.01f), adaptation_levels(3) {}
     };
 
     struct RenderSettings {
