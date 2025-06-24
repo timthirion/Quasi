@@ -10,6 +10,9 @@ endif()
 
 set(CMAKE_CXX_STANDARD 23)
 
+# Find nlohmann/json
+find_package(nlohmann_json REQUIRED)
+
 # Build geometry library
 add_subdirectory(src)
 

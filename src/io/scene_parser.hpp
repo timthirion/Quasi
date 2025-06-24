@@ -5,6 +5,7 @@
 #include "../radiometry/camera.hpp"
 #include "../radiometry/color.hpp"
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -71,25 +72,9 @@ namespace Q {
       static SceneData parse_scene_file(const std::string &filename);
 
     private:
-      static float parse_float(const std::string &str);
-      static Q::geometry::Vec3 parse_vec3(const std::string &str);
-      static Q::radiometry::Color parse_color(const std::string &str);
-      static std::string trim(const std::string &str);
-      static std::vector<std::string> split(const std::string &str, char delimiter);
-
-      // JSON parsing helpers
-      static float parse_float_from_json(const std::string &content, const std::string &key);
-      static Q::geometry::Vec3 parse_vec3_from_json(const std::string &content,
-                                                    const std::string &key);
-      static Q::radiometry::Color parse_color_from_json(const std::string &content,
-                                                        const std::string &key);
-      static void parse_spheres_from_json(const std::string &content,
-                                          std::vector<SceneSphere> &spheres);
-      static void parse_triangles_from_json(const std::string &content,
-                                            std::vector<SceneTriangle> &triangles);
-      static void parse_boxes_from_json(const std::string &content, std::vector<SceneBox> &boxes);
-      static void parse_lights_from_json(const std::string &content,
-                                         std::vector<SceneLight> &lights);
+      // Helper methods for parsing with nlohmann/json
+      static Q::geometry::Vec3 parse_vec3(const nlohmann::json &vec_json);
+      static Q::radiometry::Color parse_color(const nlohmann::json &color_json);
     };
 
   } // namespace io

@@ -22,4 +22,5 @@ ExternalProject_Add(quasi
   DEPENDS
     glfw
     catch2
+    nlohmann_json
 )

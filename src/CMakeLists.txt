@@ -76,6 +76,9 @@ target_include_directories(quasi
         $<INSTALL_INTERFACE:include>
 )
 
+# Link nlohmann/json (header-only library)
+target_link_libraries(quasi PUBLIC nlohmann_json::nlohmann_json)
+
 # Install headers with proper directory structure
 install(DIRECTORY geometry/ DESTINATION include/quasi/geometry FILES_MATCHING PATTERN "*.hpp")
 install(DIRECTORY radiometry/ DESTINATION include/quasi/radiometry FILES_MATCHING PATTERN "*.hpp")
