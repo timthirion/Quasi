@@ -32,6 +32,19 @@ namespace Q {
           scene.camera.look_at = parse_vec3(camera["look_at"]);
           scene.camera.up = parse_vec3(camera["up"]);
           scene.camera.fov = camera["fov"].get<float>();
+
+          // Parse depth of field parameters (optional)
+          if (camera.contains("aperture")) {
+            scene.camera.aperture = camera["aperture"].get<float>();
+          }
+          if (camera.contains("focus_distance")) {
+            scene.camera.focus_distance = camera["focus_distance"].get<float>();
+          }
+          if (camera.contains("f_stop")) {
+            // Convert f-stop to aperture (assuming focal length of 1.0)
+            float f_stop = camera["f_stop"].get<float>();
+            scene.camera.aperture = 1.0f / f_stop;
+          }
         }
 
         // Parse render settings

@@ -17,6 +17,13 @@ namespace Q {
       Q::geometry::Vec3 look_at;
       Q::geometry::Vec3 up;
       float fov;
+
+      // Depth of field parameters
+      float aperture;       // Aperture size (0 = pinhole camera)
+      float focus_distance; // Distance to focus plane
+
+      // Default settings (pinhole camera)
+      SceneCamera() : aperture(0.0f), focus_distance(1.0f) {}
     };
 
     struct MultisamplingSettings {
