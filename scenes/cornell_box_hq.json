@@ -9,9 +9,12 @@
     "width": 512,
     "height": 512,
     "multisampling": {
-      "samples_per_pixel": 16,
-      "sampling_pattern": "stratified",
-      "sample_integrator": "average"
+      "samples_per_pixel": 8,
+      "max_samples_per_pixel": 128,
+      "variance_threshold": 0.002,
+      "adaptation_levels": 4,
+      "sampling_pattern": "blue_noise",
+      "sample_integrator": "adaptive"
     }
   },
   "background": {
@@ -27,7 +30,15 @@
       "type": "sphere",
       "center": [-0.3, -0.7, 0.2],
       "radius": 0.3,
-      "color": [0.9, 0.9, 0.9]
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.4
+    },
+    {
+      "type": "sphere",
+      "center": [0.4, -0.6, -0.3],
+      "radius": 0.35,
+      "color": [0.8, 0.8, 0.9],
+      "reflectance": 0.7
     }
   ],
   "boxes": [
@@ -35,43 +46,50 @@
       "type": "box",
       "min": [-1.0, -1.0, -1.0],
       "max": [-0.99, 1.0, 1.0],
-      "color": [0.8, 0.2, 0.2]
+      "color": [0.8, 0.2, 0.2],
+      "reflectance": 0.05
     },
     {
       "type": "box",
       "min": [0.99, -1.0, -1.0],
       "max": [1.0, 1.0, 1.0],
-      "color": [0.2, 0.8, 0.2]
+      "color": [0.2, 0.8, 0.2],
+      "reflectance": 0.05
     },
     {
       "type": "box",
       "min": [-1.0, -1.0, -1.0],
       "max": [1.0, -0.99, 1.0],
-      "color": [0.9, 0.9, 0.9]
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.25
     },
     {
       "type": "box",
       "min": [-1.0, 0.99, -1.0],
       "max": [1.0, 1.0, 1.0],
-      "color": [0.9, 0.9, 0.9]
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.0
     },
     {
       "type": "box",
       "min": [-1.0, -1.0, -1.0],
       "max": [1.0, 1.0, -0.99],
-      "color": [0.9, 0.9, 0.9]
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.1
     },
     {
       "type": "box",
       "min": [-0.7, -1.0, -0.8],
       "max": [-0.3, 0.4, -0.4],
-      "color": [0.9, 0.9, 0.9]
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.0
     },
     {
       "type": "box", 
       "min": [0.2, -1.0, -0.2],
       "max": [0.8, -0.3, 0.4],
-      "color": [0.9, 0.9, 0.9]
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.0
     }
   ],
   "lights": [
