@@ -16,6 +16,7 @@ add_library(quasi
 
     # Radiometry module
     radiometry/color.hpp
+    radiometry/color.cpp
     radiometry/camera.hpp
     radiometry/depth_of_field_camera.hpp
     radiometry/depth_of_field_camera.cpp

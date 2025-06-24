@@ -10,7 +10,16 @@ namespace Q::radiometry {
     Color() : r(0), g(0), b(0) {}
     Color(float r, float g, float b) : r(r), g(g), b(b) {}
 
-    // Convert to 0-255 range for PPM
+    // HDR-aware tone mapping and gamma correction
+    Color tone_map_reinhard() const;
+    Color tone_map_exposure(float exposure) const;
+    Color tone_map_aces() const;
+    Color apply_gamma(float gamma = 2.2f) const;
+
+    // Get luminance for tone mapping calculations
+    float luminance() const;
+
+    // Convert to 0-255 range for PPM (with tone mapping)
     int r_int() const { return static_cast<int>(std::clamp(r * 255.0f, 0.0f, 255.0f)); }
     int g_int() const { return static_cast<int>(std::clamp(g * 255.0f, 0.0f, 255.0f)); }
     int b_int() const { return static_cast<int>(std::clamp(b * 255.0f, 0.0f, 255.0f)); }

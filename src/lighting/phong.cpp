@@ -41,10 +41,10 @@ namespace Q {
         }
       }
 
-      // Clamp to valid color range [0, 1]
-      final_color.r = std::max(0.0f, std::min(1.0f, final_color.r));
-      final_color.g = std::max(0.0f, std::min(1.0f, final_color.g));
-      final_color.b = std::max(0.0f, std::min(1.0f, final_color.b));
+      // Only clamp negative values (allow HDR values > 1.0)
+      final_color.r = std::max(0.0f, final_color.r);
+      final_color.g = std::max(0.0f, final_color.g);
+      final_color.b = std::max(0.0f, final_color.b);
 
       return final_color;
     }
