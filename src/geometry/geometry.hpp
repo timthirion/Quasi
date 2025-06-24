@@ -4,4 +4,4 @@
 #include "ray.hpp"
 #include "sphere.hpp"
 #include "triangle.hpp"
-#include "vec3.hpp"
+#include "vec.hpp"

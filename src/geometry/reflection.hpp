@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ray.hpp"
-#include "vec3.hpp"
+#include "vec.hpp"
 
 namespace Q {
   namespace geometry {

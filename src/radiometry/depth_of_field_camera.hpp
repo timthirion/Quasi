@@ -7,6 +7,10 @@
 
 namespace Q::radiometry {
 
+  // Using aliases for commonly used types
+  using Vec3 = Q::geometry::Vec3;
+  using Ray = Q::geometry::Ray;
+
   /**
    * Enhanced camera with depth of field support using thin lens model.
    * Provides realistic aperture effects and bokeh for artistic control.
@@ -14,11 +18,11 @@ namespace Q::radiometry {
   class DepthOfFieldCamera {
   private:
     // Camera coordinate system
-    Q::geometry::Vec3 origin;
-    Q::geometry::Vec3 lower_left_corner;
-    Q::geometry::Vec3 horizontal;
-    Q::geometry::Vec3 vertical;
-    Q::geometry::Vec3 u, v, w; // Camera basis vectors
+    Vec3 origin;
+    Vec3 lower_left_corner;
+    Vec3 horizontal;
+    Vec3 vertical;
+    Vec3 u, v, w; // Camera basis vectors
 
     // Depth of field parameters
     float lens_radius;    // Half of aperture diameter
@@ -32,12 +36,12 @@ namespace Q::radiometry {
     /**
      * Sample a point on the circular aperture using uniform disk sampling
      */
-    Q::geometry::Vec3 sample_aperture() const;
+    Vec3 sample_aperture() const;
 
     /**
      * Sample aperture using blue noise for better quality (when available)
      */
-    Q::geometry::Vec3 sample_aperture_blue_noise() const;
+    Vec3 sample_aperture_blue_noise() const;
 
   public:
     /**
@@ -50,9 +54,8 @@ namespace Q::radiometry {
      * @param aperture Aperture size (larger = more blur). 0 = pinhole camera
      * @param focus_dist Distance to focus plane
      */
-    DepthOfFieldCamera(Q::geometry::Vec3 look_from, Q::geometry::Vec3 look_at,
-                       Q::geometry::Vec3 vup, float vfov, float aspect_ratio, float aperture,
-                       float focus_dist);
+    DepthOfFieldCamera(Vec3 look_from, Vec3 look_at, Vec3 vup, float vfov, float aspect_ratio,
+                       float aperture, float focus_dist);
 
     /**
      * Get ray for given screen coordinates with depth of field
@@ -60,7 +63,7 @@ namespace Q::radiometry {
      * @param t Vertical coordinate [0,1]
      * @return Ray from aperture sample through focus plane
      */
-    Q::geometry::Ray get_ray(float s, float t) const;
+    Ray get_ray(float s, float t) const;
 
     /**
      * Get ray with explicit aperture sample for deterministic sampling
@@ -69,13 +72,12 @@ namespace Q::radiometry {
      * @param aperture_sample 2D sample point for aperture [0,1]x[0,1]
      * @return Ray from specific aperture point through focus plane
      */
-    Q::geometry::Ray get_ray_with_aperture_sample(float s, float t,
-                                                  const Q::geometry::Vec3 &aperture_sample) const;
+    Ray get_ray_with_aperture_sample(float s, float t, const Vec3 &aperture_sample) const;
 
     // Getters for camera parameters
     float get_aperture() const { return lens_radius * 2.0f; }
     float get_focus_distance() const { return focus_distance; }
-    Q::geometry::Vec3 get_position() const { return origin; }
+    Vec3 get_position() const { return origin; }
 
     /**
      * Convert f-stop to aperture size for more intuitive control

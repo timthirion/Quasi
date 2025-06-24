@@ -5,20 +5,22 @@
 namespace Q {
   namespace sampling {
 
+    // Using alias for commonly used type
+    using Color = Q::radiometry::Color;
+
     AdaptiveIntegrator::AdaptiveIntegrator(std::unique_ptr<SamplePattern> pattern, int base_samples,
                                            int max_samples, float threshold, int levels)
         : sample_pattern(std::move(pattern)), base_samples_per_pixel(base_samples),
           max_samples_per_pixel(max_samples), variance_threshold(threshold),
           adaptation_levels(levels) {}
 
-    float
-    AdaptiveIntegrator::calculate_variance(const std::vector<Q::radiometry::Color> &colors) const {
+    float AdaptiveIntegrator::calculate_variance(const std::vector<Color> &colors) const {
       if (colors.size() < 2) {
         return 0.0f;
       }
 
       // Calculate mean color
-      Q::radiometry::Color mean(0.0f, 0.0f, 0.0f);
+      Color mean(0.0f, 0.0f, 0.0f);
       for (const auto &color : colors) {
         mean = mean + color;
       }
@@ -37,7 +39,7 @@ namespace Q {
       return variance_sum / (colors.size() - 1);
     }
 
-    bool AdaptiveIntegrator::needs_more_samples(const std::vector<Q::radiometry::Color> &colors,
+    bool AdaptiveIntegrator::needs_more_samples(const std::vector<Color> &colors,
                                                 int current_sample_count) const {
       if (current_sample_count >= max_samples_per_pixel) {
         return false;
@@ -47,15 +49,14 @@ namespace Q {
       return variance > variance_threshold;
     }
 
-    Q::radiometry::Color
-    AdaptiveIntegrator::integrate_samples(const std::vector<Sample2D> &samples,
-                                          const std::vector<Q::radiometry::Color> &colors) const {
+    Color AdaptiveIntegrator::integrate_samples(const std::vector<Sample2D> &samples,
+                                                const std::vector<Color> &colors) const {
       if (colors.empty()) {
-        return Q::radiometry::Color(0.0f, 0.0f, 0.0f);
+        return Color(0.0f, 0.0f, 0.0f);
       }
 
       // Simple average integration (can be enhanced with weighted integration)
-      Q::radiometry::Color result(0.0f, 0.0f, 0.0f);
+      Color result(0.0f, 0.0f, 0.0f);
       for (const auto &color : colors) {
         result = result + color;
       }
@@ -63,10 +64,9 @@ namespace Q {
       return result * (1.0f / colors.size());
     }
 
-    Q::radiometry::Color AdaptiveIntegrator::integrate_adaptive(
-        int pixel_x, int pixel_y,
-        std::function<Q::radiometry::Color(const Sample2D &)> ray_tracer) const {
-      std::vector<Q::radiometry::Color> colors;
+    Color AdaptiveIntegrator::integrate_adaptive(
+        int pixel_x, int pixel_y, std::function<Color(const Sample2D &)> ray_tracer) const {
+      std::vector<Color> colors;
       int current_samples = base_samples_per_pixel;
 
       // Generate initial samples

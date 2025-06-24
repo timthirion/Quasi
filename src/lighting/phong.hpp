@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../geometry/vec3.hpp"
+#include "../geometry/vec.hpp"
 #include "../materials/material.hpp"
 #include "../radiometry/color.hpp"
 #include "light.hpp"
@@ -10,6 +10,10 @@
 
 namespace Q {
   namespace lighting {
+
+    // Using aliases for commonly used types
+    using Vec3 = Q::geometry::Vec3;
+    using Color = Q::radiometry::Color;
 
     /**
      * Phong lighting model implementation.
@@ -28,26 +32,21 @@ namespace Q {
        * @param shadow_test Function to test if a point is in shadow from a light
        * @return The final color after applying Phong lighting
        */
-      static Q::radiometry::Color calculate_lighting(
-          const Q::geometry::Vec3 &surface_point, const Q::geometry::Vec3 &surface_normal,
-          const Q::geometry::Vec3 &view_direction, const Q::materials::Material &material,
-          const std::vector<std::shared_ptr<Light>> &lights,
-          std::function<bool(const Q::geometry::Vec3 &, const Q::geometry::Vec3 &, float)>
-              shadow_test = nullptr);
+      static Color calculate_lighting(
+          const Vec3 &surface_point, const Vec3 &surface_normal, const Vec3 &view_direction,
+          const Q::materials::Material &material, const std::vector<std::shared_ptr<Light>> &lights,
+          std::function<bool(const Vec3 &, const Vec3 &, float)> shadow_test = nullptr);
 
     private:
-      static Q::radiometry::Color calculate_ambient(const Q::materials::Material &material);
+      static Color calculate_ambient(const Q::materials::Material &material);
 
-      static Q::radiometry::Color calculate_diffuse(const Q::geometry::Vec3 &light_direction,
-                                                    const Q::geometry::Vec3 &surface_normal,
-                                                    const Q::radiometry::Color &light_intensity,
-                                                    const Q::materials::Material &material);
+      static Color calculate_diffuse(const Vec3 &light_direction, const Vec3 &surface_normal,
+                                     const Color &light_intensity,
+                                     const Q::materials::Material &material);
 
-      static Q::radiometry::Color calculate_specular(const Q::geometry::Vec3 &light_direction,
-                                                     const Q::geometry::Vec3 &surface_normal,
-                                                     const Q::geometry::Vec3 &view_direction,
-                                                     const Q::radiometry::Color &light_intensity,
-                                                     const Q::materials::Material &material);
+      static Color calculate_specular(const Vec3 &light_direction, const Vec3 &surface_normal,
+                                      const Vec3 &view_direction, const Color &light_intensity,
+                                      const Q::materials::Material &material);
     };
 
   } // namespace lighting

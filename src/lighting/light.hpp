@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../geometry/vec3.hpp"
+#include "../geometry/vec.hpp"
 #include "../radiometry/color.hpp"
 
 namespace Q {

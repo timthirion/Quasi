@@ -5,6 +5,11 @@
 namespace Q {
   namespace scene {
 
+    // Using aliases for commonly used types
+    using Vec3 = Q::geometry::Vec3;
+    using Ray = Q::geometry::Ray;
+    using Color = Q::radiometry::Color;
+
     Scene::Scene() {
       // Create default empty scene
     }
@@ -74,18 +79,18 @@ namespace Q {
       lights.push_back(light);
     }
 
-    Q::radiometry::Color Scene::trace_ray(const Q::geometry::Ray &ray) const {
+    Color Scene::trace_ray(const Ray &ray) const {
 
       float closest_t = std::numeric_limits<float>::max();
-      Q::radiometry::Color hit_color;
-      Q::geometry::Vec3 hit_point;
-      Q::geometry::Vec3 hit_normal;
+      Color hit_color;
+      Vec3 hit_point;
+      Vec3 hit_normal;
       std::shared_ptr<Q::materials::Material> hit_material = nullptr;
       bool hit_anything = false;
 
       // Check sphere intersections
       for (const auto &colored_sphere : spheres) {
-        auto result = ray_sphere_intersection(ray, colored_sphere.sphere);
+        auto result = intersect(ray, colored_sphere.sphere);
         if (result.has_value()) {
           // Use the near intersection point (first hit)
           float t = result->t_near;
@@ -101,7 +106,7 @@ namespace Q {
 
       // Check triangle intersections
       for (const auto &colored_triangle : triangles) {
-        auto result = ray_triangle_intersection(ray, colored_triangle.triangle);
+        auto result = intersect(ray, colored_triangle.triangle);
         if (result.has_value() && result->hit) {
 
           float t = result->t;
@@ -111,11 +116,11 @@ namespace Q {
             // Calculate triangle normal (ensure it points outward)
             auto edge1 = colored_triangle.triangle.v1 - colored_triangle.triangle.v0;
             auto edge2 = colored_triangle.triangle.v2 - colored_triangle.triangle.v0;
-            hit_normal = edge1.cross_product(edge2).get_normalized();
+            hit_normal = edge1.cross(edge2).get_normalized();
 
             // Ensure normal points toward camera (for proper lighting)
-            Q::geometry::Vec3 to_camera = ray.origin - hit_point;
-            if (hit_normal.dot_product(to_camera) < 0) {
+            Vec3 to_camera = ray.origin - hit_point;
+            if (hit_normal.dot(to_camera) < 0) {
               hit_normal = hit_normal * -1.0f; // Flip if pointing away
             }
             hit_material = colored_triangle.material;
@@ -129,7 +134,7 @@ namespace Q {
         const auto &triangles = colored_box.box.get_triangles();
         for (int i = 0; i < triangles.size(); ++i) {
           const auto &triangle = triangles[i];
-          auto result = ray_triangle_intersection(ray, triangle);
+          auto result = intersect(ray, triangle);
           if (result.has_value() && result->hit) {
             float t = result->t;
             if (t > 0.001f && t < closest_t) {
@@ -138,11 +143,11 @@ namespace Q {
               // Calculate triangle normal (ensure it points outward)
               auto edge1 = triangle.v1 - triangle.v0;
               auto edge2 = triangle.v2 - triangle.v0;
-              hit_normal = edge1.cross_product(edge2).get_normalized();
+              hit_normal = edge1.cross(edge2).get_normalized();
 
               // Ensure normal points toward camera (for proper lighting)
-              Q::geometry::Vec3 to_camera = ray.origin - hit_point;
-              if (hit_normal.dot_product(to_camera) < 0) {
+              Vec3 to_camera = ray.origin - hit_point;
+              if (hit_normal.dot(to_camera) < 0) {
                 hit_normal = hit_normal * -1.0f; // Flip if pointing away
               }
               hit_material = colored_box.material;
@@ -155,7 +160,7 @@ namespace Q {
       // If we hit something, apply Phong lighting
       if (hit_anything && hit_material) {
         // Calculate view direction (from hit point to camera)
-        Q::geometry::Vec3 view_direction = (ray.origin - hit_point).get_normalized();
+        Vec3 view_direction = (ray.origin - hit_point).get_normalized();
 
         // Apply Phong lighting
         hit_color = Q::lighting::PhongLighting::calculate_lighting(
@@ -165,7 +170,7 @@ namespace Q {
       }
 
       // Return solid black background
-      return Q::radiometry::Color(0.0f, 0.0f, 0.0f); // Black background
+      return Color(0.0f, 0.0f, 0.0f); // Black background
     }
 
     void Scene::setup_background(const Q::io::BackgroundSettings &bg_settings,
@@ -190,18 +195,18 @@ namespace Q {
       float quad_z = -far_distance;
 
       // Define quad vertices slightly larger than camera frustum
-      Q::geometry::Vec3 bottom_left(-half_width, -half_height, quad_z);
-      Q::geometry::Vec3 bottom_right(half_width, -half_height, quad_z);
-      Q::geometry::Vec3 top_left(-half_width, half_height, quad_z);
-      Q::geometry::Vec3 top_right(half_width, half_height, quad_z);
+      Vec3 bottom_left(-half_width, -half_height, quad_z);
+      Vec3 bottom_right(half_width, -half_height, quad_z);
+      Vec3 top_left(-half_width, half_height, quad_z);
+      Vec3 top_right(half_width, half_height, quad_z);
 
       // UV coordinates [0,1] × [0,1] for the quad
       // Use small negative/positive margins to ensure texture coverage
       float uv_margin = -0.005f; // Negative margin to slightly extend UV coverage
-      Q::geometry::Vec3 uv_bl(uv_margin, uv_margin, 0.0f);
-      Q::geometry::Vec3 uv_br(1.0f - uv_margin, uv_margin, 0.0f);
-      Q::geometry::Vec3 uv_tl(uv_margin, 1.0f - uv_margin, 0.0f);
-      Q::geometry::Vec3 uv_tr(1.0f - uv_margin, 1.0f - uv_margin, 0.0f);
+      Vec3 uv_bl(uv_margin, uv_margin, 0.0f);
+      Vec3 uv_br(1.0f - uv_margin, uv_margin, 0.0f);
+      Vec3 uv_tl(uv_margin, 1.0f - uv_margin, 0.0f);
+      Vec3 uv_tr(1.0f - uv_margin, 1.0f - uv_margin, 0.0f);
 
       // First triangle: bottom-left, bottom-right, top-left
       background_triangles.emplace_back(Q::geometry::Triangle(bottom_left, bottom_right, top_left),
@@ -212,17 +217,16 @@ namespace Q {
                                         uv_br, uv_tr, uv_tl, background_texture.get());
     }
 
-    std::optional<Intersection>
-    Scene::find_closest_intersection(const Q::geometry::Ray &ray) const {
+    std::optional<Intersection> Scene::find_closest_intersection(const Ray &ray) const {
       float closest_t = std::numeric_limits<float>::infinity();
-      Q::geometry::Vec3 hit_point;
-      Q::geometry::Vec3 hit_normal;
+      Vec3 hit_point;
+      Vec3 hit_normal;
       std::shared_ptr<Q::materials::Material> hit_material = nullptr;
       bool hit_anything = false;
 
       // Check sphere intersections
       for (const auto &colored_sphere : spheres) {
-        auto result = ray_sphere_intersection(ray, colored_sphere.sphere);
+        auto result = intersect(ray, colored_sphere.sphere);
         if (result.has_value()) {
           float t = result->t_near;
           if (t > 0.001f && t < closest_t) {
@@ -237,7 +241,7 @@ namespace Q {
 
       // Check triangle intersections
       for (const auto &colored_triangle : triangles) {
-        auto result = ray_triangle_intersection(ray, colored_triangle.triangle);
+        auto result = intersect(ray, colored_triangle.triangle);
         if (result.has_value()) {
           float t = result->t;
           if (t > 0.001f && t < closest_t) {
@@ -254,7 +258,7 @@ namespace Q {
       for (const auto &colored_box : boxes) {
         auto triangles = colored_box.box.get_triangles();
         for (const auto &triangle : triangles) {
-          auto result = ray_triangle_intersection(ray, triangle);
+          auto result = intersect(ray, triangle);
           if (result.has_value()) {
             float t = result->t;
             if (t > 0.001f && t < closest_t) {

@@ -9,6 +9,9 @@
 namespace Q {
   namespace sampling {
 
+    // Using alias for commonly used type
+    using Color = Q::radiometry::Color;
+
     /**
      * Adaptive sample integrator that automatically increases sampling density
      * in high-variance regions to improve image quality efficiently.
@@ -26,13 +29,12 @@ namespace Q {
       /**
        * Calculate color variance from a set of samples
        */
-      float calculate_variance(const std::vector<Q::radiometry::Color> &colors) const;
+      float calculate_variance(const std::vector<Color> &colors) const;
 
       /**
        * Determine if more samples are needed based on variance
        */
-      bool needs_more_samples(const std::vector<Q::radiometry::Color> &colors,
-                              int current_sample_count) const;
+      bool needs_more_samples(const std::vector<Color> &colors, int current_sample_count) const;
 
     public:
       /**
@@ -46,9 +48,8 @@ namespace Q {
       AdaptiveIntegrator(std::unique_ptr<SamplePattern> pattern, int base_samples = 4,
                          int max_samples = 64, float threshold = 0.01f, int levels = 3);
 
-      Q::radiometry::Color
-      integrate_samples(const std::vector<Sample2D> &samples,
-                        const std::vector<Q::radiometry::Color> &colors) const override;
+      Color integrate_samples(const std::vector<Sample2D> &samples,
+                              const std::vector<Color> &colors) const override;
 
       /**
        * Adaptive sampling integration with callback for generating more samples
@@ -57,9 +58,8 @@ namespace Q {
        * @param ray_tracer Function to trace rays and get colors
        * @return Final integrated color
        */
-      Q::radiometry::Color
-      integrate_adaptive(int pixel_x, int pixel_y,
-                         std::function<Q::radiometry::Color(const Sample2D &)> ray_tracer) const;
+      Color integrate_adaptive(int pixel_x, int pixel_y,
+                               std::function<Color(const Sample2D &)> ray_tracer) const;
 
       std::string get_name() const override { return "adaptive"; }
 
