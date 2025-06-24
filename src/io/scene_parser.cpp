@@ -54,6 +54,17 @@ namespace Q {
               scene.render.multisampling.sample_integrator =
                   ms["sample_integrator"].get<std::string>();
             }
+            // Parse adaptive sampling parameters
+            if (ms.contains("max_samples_per_pixel")) {
+              scene.render.multisampling.max_samples_per_pixel =
+                  ms["max_samples_per_pixel"].get<int>();
+            }
+            if (ms.contains("variance_threshold")) {
+              scene.render.multisampling.variance_threshold = ms["variance_threshold"].get<float>();
+            }
+            if (ms.contains("adaptation_levels")) {
+              scene.render.multisampling.adaptation_levels = ms["adaptation_levels"].get<int>();
+            }
           }
         }
 

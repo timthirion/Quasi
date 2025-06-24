@@ -28,5 +28,12 @@ namespace Q {
     // Factory function to create sample integrators
     std::unique_ptr<SampleIntegrator> create_sample_integrator(const std::string &integrator_name);
 
+    // Factory function to create sample integrators with parameters
+    std::unique_ptr<SampleIntegrator> create_sample_integrator(const std::string &integrator_name,
+                                                               int base_samples = 4,
+                                                               int max_samples = 64,
+                                                               float variance_threshold = 0.01f,
+                                                               int adaptation_levels = 3);
+
   } // namespace sampling
 } // namespace Q

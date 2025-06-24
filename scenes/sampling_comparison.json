@@ -1,0 +1,57 @@
+{
+  "camera": {
+    "position": [0.0, 0.0, 4.0],
+    "look_at": [0.0, 0.0, 0.0],
+    "up": [0.0, 1.0, 0.0],
+    "fov": 35.0
+  },
+  "render": {
+    "width": 512,
+    "height": 512,
+    "multisampling": {
+      "samples_per_pixel": 8,
+      "sampling_pattern": "blue_noise",
+      "sample_integrator": "average"
+    }
+  },
+  "background": {
+    "type": "checkerboard",
+    "color1": [0.0, 0.0, 0.0],
+    "color2": [0.0, 0.0, 0.0],
+    "rows": 1,
+    "columns": 1,
+    "distance": 50.0
+  },
+  "objects": [
+    {
+      "type": "sphere",
+      "center": [0.0, 0.0, 0.0],
+      "radius": 0.5,
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.9
+    }
+  ],
+  "boxes": [
+    {
+      "type": "box",
+      "min": [-2.0, -2.0, -2.0],
+      "max": [2.0, -1.99, 2.0],
+      "color": [0.9, 0.9, 0.9],
+      "reflectance": 0.2
+    }
+  ],
+  "lights": [
+    {
+      "type": "point_light",
+      "position": [-1.0, 1.0, 1.0],
+      "color": [1.0, 1.0, 1.0],
+      "intensity": 2.0
+    },
+    {
+      "type": "point_light",
+      "position": [1.0, 1.0, 1.0],
+      "color": [1.0, 1.0, 1.0],
+      "intensity": 2.0
+    }
+  ]
+}
