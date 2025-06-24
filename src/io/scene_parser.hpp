@@ -12,10 +12,14 @@
 namespace Q {
   namespace io {
 
+    // Using aliases for commonly used types
+    using Vec3 = Q::geometry::Vec3;
+    using Color = Q::radiometry::Color;
+
     struct SceneCamera {
-      Q::geometry::Vec3 position;
-      Q::geometry::Vec3 look_at;
-      Q::geometry::Vec3 up;
+      Vec3 position;
+      Vec3 look_at;
+      Vec3 up;
       float fov;
 
       // Depth of field parameters
@@ -49,44 +53,44 @@ namespace Q {
     };
 
     struct BackgroundSettings {
-      Q::radiometry::Color color1;
-      Q::radiometry::Color color2;
+      Color color1;
+      Color color2;
       int rows;
       int columns;
       float distance;
     };
 
     struct SceneSphere {
-      Q::geometry::Vec3 center;
+      Vec3 center;
       float radius;
-      Q::radiometry::Color color;
+      Color color;
       float reflectance; // [0,1] how reflective the surface is
 
       SceneSphere() : reflectance(0.0f) {}
     };
 
     struct SceneBox {
-      Q::geometry::Vec3 min_corner;
-      Q::geometry::Vec3 max_corner;
-      Q::radiometry::Color color;
+      Vec3 min_corner;
+      Vec3 max_corner;
+      Color color;
       float reflectance;
 
       SceneBox() : reflectance(0.0f) {}
     };
 
     struct SceneTriangle {
-      Q::geometry::Vec3 vertex1;
-      Q::geometry::Vec3 vertex2;
-      Q::geometry::Vec3 vertex3;
-      Q::radiometry::Color color;
+      Vec3 vertex1;
+      Vec3 vertex2;
+      Vec3 vertex3;
+      Color color;
       float reflectance;
 
       SceneTriangle() : reflectance(0.0f) {}
     };
 
     struct SceneLight {
-      Q::geometry::Vec3 position;
-      Q::radiometry::Color color;
+      Vec3 position;
+      Color color;
       float intensity;
     };
 

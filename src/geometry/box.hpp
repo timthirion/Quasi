@@ -1,7 +1,7 @@
 #pragma once
 
 #include "triangle.hpp"
-#include "vec3.hpp"
+#include "vec.hpp"
 #include <array>
 #include <vector>
 

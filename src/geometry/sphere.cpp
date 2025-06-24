@@ -34,15 +34,14 @@ namespace Q {
         : hit(true), t_near(t_near), t_far(t_far), point_near(point_near), point_far(point_far),
           normal_near(normal_near), normal_far(normal_far) {}
 
-    std::optional<SphereIntersectionResult> ray_sphere_intersection(const Ray &ray,
-                                                                    const Sphere &sphere) {
+    std::optional<SphereIntersectionResult> intersect(const Ray &ray, const Sphere &sphere) {
       // Vector from ray origin to sphere center
       Vec3 oc = ray.origin - sphere.center;
 
       // Quadratic equation coefficients: at^2 + bt + c = 0
-      float a = ray.direction.dot_product(ray.direction);
-      float b = 2.0f * oc.dot_product(ray.direction);
-      float c = oc.dot_product(oc) - sphere.radius * sphere.radius;
+      float a = ray.direction.dot(ray.direction);
+      float b = 2.0f * oc.dot(ray.direction);
+      float c = oc.dot(oc) - sphere.radius * sphere.radius;
 
       // Calculate discriminant
       float discriminant = b * b - 4 * a * c;

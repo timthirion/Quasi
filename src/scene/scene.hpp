@@ -17,14 +17,19 @@
 namespace Q {
   namespace scene {
 
+    // Using aliases for commonly used types
+    using Vec3 = Q::geometry::Vec3;
+    using Ray = Q::geometry::Ray;
+    using Color = Q::radiometry::Color;
+
     // Intersection information for ray tracing
     struct Intersection {
-      Q::geometry::Vec3 point;
-      Q::geometry::Vec3 normal;
+      Vec3 point;
+      Vec3 normal;
       float distance;
       std::shared_ptr<Q::materials::Material> material;
 
-      Intersection(const Q::geometry::Vec3 &p, const Q::geometry::Vec3 &n, float d,
+      Intersection(const Vec3 &p, const Vec3 &n, float d,
                    std::shared_ptr<Q::materials::Material> mat)
           : point(p), normal(n), distance(d), material(mat) {}
     };
@@ -55,12 +60,11 @@ namespace Q {
 
     struct TexturedTriangle {
       Q::geometry::Triangle triangle;
-      Q::geometry::Vec3 uv0, uv1, uv2; // UV coordinates for each vertex (z component unused)
+      Vec3 uv0, uv1, uv2; // UV coordinates for each vertex (z component unused)
       Q::materials::CheckerboardTexture *texture;
 
-      TexturedTriangle(const Q::geometry::Triangle &tri, const Q::geometry::Vec3 &uv0,
-                       const Q::geometry::Vec3 &uv1, const Q::geometry::Vec3 &uv2,
-                       Q::materials::CheckerboardTexture *tex)
+      TexturedTriangle(const Q::geometry::Triangle &tri, const Vec3 &uv0, const Vec3 &uv1,
+                       const Vec3 &uv2, Q::materials::CheckerboardTexture *tex)
           : triangle(tri), uv0(uv0), uv1(uv1), uv2(uv2), texture(tex) {}
     };
 
@@ -89,10 +93,10 @@ namespace Q {
                         std::shared_ptr<Q::materials::Material> material);
       void add_box(const Q::geometry::Box &box, std::shared_ptr<Q::materials::Material> material);
       void add_light(std::shared_ptr<Q::lighting::Light> light);
-      Q::radiometry::Color trace_ray(const Q::geometry::Ray &ray) const;
+      Color trace_ray(const Ray &ray) const;
 
       // Find closest intersection for reflection ray tracing
-      std::optional<Intersection> find_closest_intersection(const Q::geometry::Ray &ray) const;
+      std::optional<Intersection> find_closest_intersection(const Ray &ray) const;
 
     private:
       void setup_background(const Q::io::BackgroundSettings &bg_settings,

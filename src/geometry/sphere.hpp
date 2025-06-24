@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ray.hpp"
-#include "vec3.hpp"
+#include "vec.hpp"
 #include <optional>
 
 namespace Q {
@@ -33,8 +33,13 @@ namespace Q {
                                const Vec3 &normal_far);
     };
 
-    std::optional<SphereIntersectionResult> ray_sphere_intersection(const Ray &ray,
-                                                                    const Sphere &sphere);
+    std::optional<SphereIntersectionResult> intersect(const Ray &ray, const Sphere &sphere);
+
+    // Backward compatibility alias
+    inline std::optional<SphereIntersectionResult> ray_sphere_intersection(const Ray &ray,
+                                                                           const Sphere &sphere) {
+      return intersect(ray, sphere);
+    }
 
   } // namespace geometry
 } // namespace Q

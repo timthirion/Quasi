@@ -1,8 +1,8 @@
 # Create unified Quasi library
 add_library(quasi
     # Geometry module
-    geometry/vec3.cpp
-    geometry/vec3.hpp
+    geometry/vec.cpp
+    geometry/vec.hpp
     geometry/ray.cpp
     geometry/ray.hpp
     geometry/triangle.cpp
