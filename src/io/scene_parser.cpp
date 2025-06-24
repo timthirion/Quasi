@@ -75,6 +75,9 @@ namespace Q {
               sphere.center = parse_vec3(obj["center"]);
               sphere.radius = obj["radius"].get<float>();
               sphere.color = parse_color(obj["color"]);
+              if (obj.contains("reflectance")) {
+                sphere.reflectance = obj["reflectance"].get<float>();
+              }
               scene.spheres.push_back(sphere);
             }
             if (obj.contains("type") && obj["type"] == "triangle") {
@@ -83,6 +86,9 @@ namespace Q {
               triangle.vertex2 = parse_vec3(obj["vertex2"]);
               triangle.vertex3 = parse_vec3(obj["vertex3"]);
               triangle.color = parse_color(obj["color"]);
+              if (obj.contains("reflectance")) {
+                triangle.reflectance = obj["reflectance"].get<float>();
+              }
               scene.triangles.push_back(triangle);
             }
           }
@@ -95,6 +101,9 @@ namespace Q {
             box.min_corner = parse_vec3(box_obj["min"]);
             box.max_corner = parse_vec3(box_obj["max"]);
             box.color = parse_color(box_obj["color"]);
+            if (box_obj.contains("reflectance")) {
+              box.reflectance = box_obj["reflectance"].get<float>();
+            }
             scene.boxes.push_back(box);
           }
         }

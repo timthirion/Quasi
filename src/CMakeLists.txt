@@ -11,6 +11,7 @@ add_library(quasi
     geometry/sphere.hpp
     geometry/box.cpp
     geometry/box.hpp
+    geometry/reflection.hpp
     geometry/geometry.hpp
     
     # Radiometry module (header-only)
@@ -35,6 +36,8 @@ add_library(quasi
     # Scene module
     scene/scene.hpp
     scene/scene.cpp
+    scene/ray_tracer.hpp
+    scene/ray_tracer.cpp
     
     # Sampling module
     sampling/sample_pattern.hpp
@@ -71,10 +74,12 @@ add_custom_target(copy_headers
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/checkerboard_texture.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/checkerboard_texture.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/material.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/material.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/box.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/box.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/reflection.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/reflection.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/light.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/light.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/phong.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/phong.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io/scene_parser.hpp ${QUASI_INCLUDE_DIR}/quasi/io/scene_parser.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.hpp ${QUASI_INCLUDE_DIR}/quasi/scene/scene.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/scene/ray_tracer.hpp ${QUASI_INCLUDE_DIR}/quasi/scene/ray_tracer.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/sample_pattern.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/sample_pattern.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/sample_integrator.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/sample_integrator.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/stratified_pattern.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/stratified_pattern.hpp

@@ -6,6 +6,7 @@
 #include <quasi/radiometry/color.hpp>
 #include <quasi/sampling/sample_integrator.hpp>
 #include <quasi/sampling/sample_pattern.hpp>
+#include <quasi/scene/ray_tracer.hpp>
 #include <quasi/scene/scene.hpp>
 #include <vector>
 
@@ -29,6 +30,9 @@ int main(int argc, char *argv[]) {
     std::cout << "Loading scene from: " << scene_filename << std::endl;
     auto scene_data = SceneParser::parse_scene_file(scene_filename);
     Scene scene(scene_data);
+
+    // Create ray tracer with reflection support
+    RayTracer ray_tracer(scene, 3); // 3 reflection bounces
 
     // Remove triangle test for sphere test
 
@@ -83,7 +87,7 @@ int main(int argc, char *argv[]) {
                     static_cast<float>(scene_data.render.height);
 
           Ray ray = camera.get_ray(u, v);
-          Color sample_color = scene.trace_ray(ray);
+          Color sample_color = ray_tracer.trace_ray_with_reflections(ray);
           sample_colors.push_back(sample_color);
         }
 

@@ -11,10 +11,23 @@
 #include "../radiometry/color.hpp"
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace Q {
   namespace scene {
+
+    // Intersection information for ray tracing
+    struct Intersection {
+      Q::geometry::Vec3 point;
+      Q::geometry::Vec3 normal;
+      float distance;
+      std::shared_ptr<Q::materials::Material> material;
+
+      Intersection(const Q::geometry::Vec3 &p, const Q::geometry::Vec3 &n, float d,
+                   std::shared_ptr<Q::materials::Material> mat)
+          : point(p), normal(n), distance(d), material(mat) {}
+    };
 
     struct ColoredSphere {
       Q::geometry::Sphere sphere;
@@ -77,6 +90,9 @@ namespace Q {
       void add_box(const Q::geometry::Box &box, std::shared_ptr<Q::materials::Material> material);
       void add_light(std::shared_ptr<Q::lighting::Light> light);
       Q::radiometry::Color trace_ray(const Q::geometry::Ray &ray) const;
+
+      // Find closest intersection for reflection ray tracing
+      std::optional<Intersection> find_closest_intersection(const Q::geometry::Ray &ray) const;
 
     private:
       void setup_background(const Q::io::BackgroundSettings &bg_settings,

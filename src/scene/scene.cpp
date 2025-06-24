@@ -20,7 +20,8 @@ namespace Q {
       // Add spheres
       for (const auto &sphere_data : scene_data.spheres) {
         Q::geometry::Sphere sphere(sphere_data.center, sphere_data.radius);
-        auto material = std::make_shared<Q::materials::SolidMaterial>(sphere_data.color);
+        auto material = std::make_shared<Q::materials::SolidMaterial>(sphere_data.color,
+                                                                      sphere_data.reflectance);
         add_sphere(sphere, material);
       }
 
@@ -28,14 +29,16 @@ namespace Q {
       for (const auto &triangle_data : scene_data.triangles) {
         Q::geometry::Triangle triangle(triangle_data.vertex1, triangle_data.vertex2,
                                        triangle_data.vertex3);
-        auto material = std::make_shared<Q::materials::SolidMaterial>(triangle_data.color);
+        auto material = std::make_shared<Q::materials::SolidMaterial>(triangle_data.color,
+                                                                      triangle_data.reflectance);
         add_triangle(triangle, material);
       }
 
       // Add boxes
       for (const auto &box_data : scene_data.boxes) {
         Q::geometry::Box box(box_data.min_corner, box_data.max_corner);
-        auto material = std::make_shared<Q::materials::SolidMaterial>(box_data.color);
+        auto material =
+            std::make_shared<Q::materials::SolidMaterial>(box_data.color, box_data.reflectance);
         add_box(box, material);
       }
 
@@ -207,6 +210,69 @@ namespace Q {
       // Second triangle: bottom-right, top-right, top-left
       background_triangles.emplace_back(Q::geometry::Triangle(bottom_right, top_right, top_left),
                                         uv_br, uv_tr, uv_tl, background_texture.get());
+    }
+
+    std::optional<Intersection>
+    Scene::find_closest_intersection(const Q::geometry::Ray &ray) const {
+      float closest_t = std::numeric_limits<float>::infinity();
+      Q::geometry::Vec3 hit_point;
+      Q::geometry::Vec3 hit_normal;
+      std::shared_ptr<Q::materials::Material> hit_material = nullptr;
+      bool hit_anything = false;
+
+      // Check sphere intersections
+      for (const auto &colored_sphere : spheres) {
+        auto result = ray_sphere_intersection(ray, colored_sphere.sphere);
+        if (result.has_value()) {
+          float t = result->t_near;
+          if (t > 0.001f && t < closest_t) {
+            closest_t = t;
+            hit_point = ray.origin + ray.direction * t;
+            hit_normal = (hit_point - colored_sphere.sphere.center).get_normalized();
+            hit_material = colored_sphere.material;
+            hit_anything = true;
+          }
+        }
+      }
+
+      // Check triangle intersections
+      for (const auto &colored_triangle : triangles) {
+        auto result = ray_triangle_intersection(ray, colored_triangle.triangle);
+        if (result.has_value()) {
+          float t = result->t;
+          if (t > 0.001f && t < closest_t) {
+            closest_t = t;
+            hit_point = ray.origin + ray.direction * t;
+            hit_normal = colored_triangle.triangle.get_normal();
+            hit_material = colored_triangle.material;
+            hit_anything = true;
+          }
+        }
+      }
+
+      // Check box intersections (simplified - we'll use the first hit triangle)
+      for (const auto &colored_box : boxes) {
+        auto triangles = colored_box.box.get_triangles();
+        for (const auto &triangle : triangles) {
+          auto result = ray_triangle_intersection(ray, triangle);
+          if (result.has_value()) {
+            float t = result->t;
+            if (t > 0.001f && t < closest_t) {
+              closest_t = t;
+              hit_point = ray.origin + ray.direction * t;
+              hit_normal = triangle.get_normal();
+              hit_material = colored_box.material;
+              hit_anything = true;
+            }
+          }
+        }
+      }
+
+      if (hit_anything) {
+        return Intersection(hit_point, hit_normal, closest_t, hit_material);
+      }
+
+      return std::nullopt;
     }
 
   } // namespace scene
