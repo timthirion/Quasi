@@ -6,7 +6,7 @@ namespace Q {
   namespace materials {
 
     // Using alias for commonly used type
-    using Color = Color;
+    using Color = Q::radiometry::Color;
 
     /**
      * Base material class defining surface properties for lighting calculations.

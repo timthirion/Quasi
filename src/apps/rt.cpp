@@ -171,8 +171,9 @@ int main(int argc, char *argv[]) {
     if (argc > 2) {
       output_filename = argv[2];
     }
-    PPMWriter::write_ppm(output_filename, pixels, scene_data.render.width,
-                         scene_data.render.height);
+    // Use Reinhard tone mapping with gamma correction for better image quality
+    PPMWriter::write_ppm(output_filename, pixels, scene_data.render.width, scene_data.render.height,
+                         ToneMapType::REINHARD, 0.0f, 2.2f);
 
     std::cout << "Raytracing complete!" << std::endl;
     return 0;
