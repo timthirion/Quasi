@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../geometry/vec3.hpp"
+#include <memory>
+#include <string>
 #include <vector>
 
 namespace Q {

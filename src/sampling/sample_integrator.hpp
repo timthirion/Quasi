@@ -2,6 +2,8 @@
 
 #include "../radiometry/color.hpp"
 #include "sample_pattern.hpp"
+#include <memory>
+#include <string>
 #include <vector>
 
 namespace Q {
