@@ -1,5 +1,5 @@
 # Create unified Quasi library
-add_library(quasi 
+add_library(quasi
     # Geometry module
     geometry/vec3.cpp
     geometry/vec3.hpp
@@ -11,31 +11,34 @@ add_library(quasi
     geometry/sphere.hpp
     geometry/box.cpp
     geometry/box.hpp
+    geometry/reflection.hpp
     geometry/geometry.hpp
-    
+
     # Radiometry module (header-only)
     radiometry/color.hpp
     radiometry/camera.hpp
-    
+
     # IO module
     io/ppm_writer.hpp
     io/scene_parser.hpp
     io/scene_parser.cpp
-    
+
     # Materials module
     materials/texture.hpp
     materials/checkerboard_texture.hpp
     materials/material.hpp
-    
+
     # Lighting module
     lighting/light.hpp
     lighting/phong.hpp
     lighting/phong.cpp
-    
+
     # Scene module
     scene/scene.hpp
     scene/scene.cpp
-    
+    scene/ray_tracer.hpp
+    scene/ray_tracer.cpp
+
     # Sampling module
     sampling/sample_pattern.hpp
     sampling/sample_pattern.cpp
@@ -49,43 +52,22 @@ add_library(quasi
 
 # Create include directory structure in build directory
 set(QUASI_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/geometry)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/radiometry)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/io)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/materials)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/lighting)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/scene)
-file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/sampling)
+file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi)
 
-# Create custom targets to copy and transform headers
-add_custom_target(copy_headers
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/geometry.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/geometry.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/vec3.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/vec3.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/ray.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/ray.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/triangle.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/triangle.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/sphere.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/sphere.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/radiometry/color.hpp ${QUASI_INCLUDE_DIR}/quasi/radiometry/color.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io/ppm_writer.hpp ${QUASI_INCLUDE_DIR}/quasi/io/ppm_writer.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/radiometry/camera.hpp ${QUASI_INCLUDE_DIR}/quasi/radiometry/camera.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/texture.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/texture.hpp  
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/checkerboard_texture.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/checkerboard_texture.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/materials/material.hpp ${QUASI_INCLUDE_DIR}/quasi/materials/material.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/geometry/box.hpp ${QUASI_INCLUDE_DIR}/quasi/geometry/box.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/light.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/light.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/phong.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/phong.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io/scene_parser.hpp ${QUASI_INCLUDE_DIR}/quasi/io/scene_parser.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.hpp ${QUASI_INCLUDE_DIR}/quasi/scene/scene.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/sample_pattern.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/sample_pattern.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/sample_integrator.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/sample_integrator.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/stratified_pattern.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/stratified_pattern.hpp
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/average_integrator.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/average_integrator.hpp
+# Copy headers to build include directory (much cleaner than individual commands)
+add_custom_target(copy_headers ALL
+    # Copy all .hpp files while preserving directory structure
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR} ${QUASI_INCLUDE_DIR}/quasi
+    # Remove copied .cpp files - we only want headers in include directory
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${QUASI_INCLUDE_DIR}/quasi/*/*.cpp
+    COMMENT "Copying header files to build include directory"
 )
 
 add_dependencies(quasi copy_headers)
 
 # Set up include directories for the library
-target_include_directories(quasi 
-    PUBLIC 
+target_include_directories(quasi
+    PUBLIC
         $<BUILD_INTERFACE:${QUASI_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
