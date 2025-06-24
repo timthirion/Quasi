@@ -5,6 +5,8 @@ add_executable(quasi_tests
     test_ray_triangle_intersection.cpp
     test_ray_sphere_intersection.cpp
     test_checkerboard_texture.cpp
+    test_blue_noise_pattern.cpp
+    test_adaptive_integrator.cpp
 )
 target_link_libraries(quasi_tests PRIVATE 
     Catch2::Catch2WithMain
