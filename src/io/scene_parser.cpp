@@ -39,6 +39,22 @@ namespace Q {
           const auto &render = scene_json["render"];
           scene.render.width = render["width"].get<int>();
           scene.render.height = render["height"].get<int>();
+
+          // Parse multisampling settings (optional)
+          if (render.contains("multisampling")) {
+            const auto &ms = render["multisampling"];
+            if (ms.contains("samples_per_pixel")) {
+              scene.render.multisampling.samples_per_pixel = ms["samples_per_pixel"].get<int>();
+            }
+            if (ms.contains("sampling_pattern")) {
+              scene.render.multisampling.sampling_pattern =
+                  ms["sampling_pattern"].get<std::string>();
+            }
+            if (ms.contains("sample_integrator")) {
+              scene.render.multisampling.sample_integrator =
+                  ms["sample_integrator"].get<std::string>();
+            }
+          }
         }
 
         // Parse background

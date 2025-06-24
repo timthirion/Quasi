@@ -4,12 +4,15 @@
 #include <quasi/io/scene_parser.hpp>
 #include <quasi/radiometry/camera.hpp>
 #include <quasi/radiometry/color.hpp>
+#include <quasi/sampling/sample_integrator.hpp>
+#include <quasi/sampling/sample_pattern.hpp>
 #include <quasi/scene/scene.hpp>
 #include <vector>
 
 using namespace Q::geometry;
 using namespace Q::radiometry;
 using namespace Q::io;
+using namespace Q::sampling;
 using namespace Q::scene;
 
 // Scene structures are now defined in quasi/scene/scene.hpp
@@ -48,6 +51,15 @@ int main(int argc, char *argv[]) {
     Camera camera(scene_data.camera.position, scene_data.camera.look_at, scene_data.camera.up,
                   scene_data.camera.fov, aspect_ratio);
 
+    // Create sampling pattern and integrator
+    auto sample_pattern = create_sample_pattern(scene_data.render.multisampling.sampling_pattern);
+    auto sample_integrator =
+        create_sample_integrator(scene_data.render.multisampling.sample_integrator);
+
+    std::cout << "Using " << scene_data.render.multisampling.samples_per_pixel
+              << " samples per pixel with " << sample_pattern->get_name() << " sampling and "
+              << sample_integrator->get_name() << " integration" << std::endl;
+
     // Render the image
     std::vector<Color> pixels(scene_data.render.width * scene_data.render.height);
 
@@ -56,13 +68,27 @@ int main(int argc, char *argv[]) {
 
     for (int y = 0; y < scene_data.render.height; ++y) {
       for (int x = 0; x < scene_data.render.width; ++x) {
-        float u = static_cast<float>(x) / static_cast<float>(scene_data.render.width - 1);
-        float v = static_cast<float>(scene_data.render.height - 1 - y) /
-                  static_cast<float>(scene_data.render.height - 1); // Flip Y
+        // Generate samples for this pixel
+        auto samples =
+            sample_pattern->generate_samples(scene_data.render.multisampling.samples_per_pixel);
+        std::vector<Color> sample_colors;
+        sample_colors.reserve(samples.size());
 
-        Ray ray = camera.get_ray(u, v);
-        Color pixel_color = scene.trace_ray(ray);
+        // Trace rays for each sample
+        for (const auto &sample : samples) {
+          // Convert pixel coordinates to UV coordinates with sample offset
+          float u =
+              (static_cast<float>(x) + sample.x) / static_cast<float>(scene_data.render.width);
+          float v = (static_cast<float>(scene_data.render.height - 1 - y) + sample.y) /
+                    static_cast<float>(scene_data.render.height);
 
+          Ray ray = camera.get_ray(u, v);
+          Color sample_color = scene.trace_ray(ray);
+          sample_colors.push_back(sample_color);
+        }
+
+        // Integrate samples to get final pixel color
+        Color pixel_color = sample_integrator->integrate_samples(samples, sample_colors);
         pixels[y * scene_data.render.width + x] = pixel_color;
       }
 

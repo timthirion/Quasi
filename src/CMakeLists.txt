@@ -35,6 +35,16 @@ add_library(quasi
     # Scene module
     scene/scene.hpp
     scene/scene.cpp
+    
+    # Sampling module
+    sampling/sample_pattern.hpp
+    sampling/sample_pattern.cpp
+    sampling/sample_integrator.hpp
+    sampling/sample_integrator.cpp
+    sampling/stratified_pattern.hpp
+    sampling/stratified_pattern.cpp
+    sampling/average_integrator.hpp
+    sampling/average_integrator.cpp
 )
 
 # Create include directory structure in build directory
@@ -45,6 +55,7 @@ file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/io)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/materials)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/lighting)
 file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/scene)
+file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi/sampling)
 
 # Create custom targets to copy and transform headers
 add_custom_target(copy_headers
@@ -64,6 +75,10 @@ add_custom_target(copy_headers
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lighting/phong.hpp ${QUASI_INCLUDE_DIR}/quasi/lighting/phong.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io/scene_parser.hpp ${QUASI_INCLUDE_DIR}/quasi/io/scene_parser.hpp
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.hpp ${QUASI_INCLUDE_DIR}/quasi/scene/scene.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/sample_pattern.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/sample_pattern.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/sample_integrator.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/sample_integrator.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/stratified_pattern.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/stratified_pattern.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/sampling/average_integrator.hpp ${QUASI_INCLUDE_DIR}/quasi/sampling/average_integrator.hpp
 )
 
 add_dependencies(quasi copy_headers)
@@ -86,6 +101,7 @@ install(DIRECTORY io/ DESTINATION include/quasi/io FILES_MATCHING PATTERN "*.hpp
 install(DIRECTORY materials/ DESTINATION include/quasi/materials FILES_MATCHING PATTERN "*.hpp")
 install(DIRECTORY lighting/ DESTINATION include/quasi/lighting FILES_MATCHING PATTERN "*.hpp")
 install(DIRECTORY scene/ DESTINATION include/quasi/scene FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY sampling/ DESTINATION include/quasi/sampling FILES_MATCHING PATTERN "*.hpp")
 
 # Install the library
 install(TARGETS quasi
