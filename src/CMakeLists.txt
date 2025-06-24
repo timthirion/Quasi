@@ -1,5 +1,5 @@
 # Create unified Quasi library
-add_library(quasi 
+add_library(quasi
     # Geometry module
     geometry/vec3.cpp
     geometry/vec3.hpp
@@ -13,32 +13,32 @@ add_library(quasi
     geometry/box.hpp
     geometry/reflection.hpp
     geometry/geometry.hpp
-    
+
     # Radiometry module (header-only)
     radiometry/color.hpp
     radiometry/camera.hpp
-    
+
     # IO module
     io/ppm_writer.hpp
     io/scene_parser.hpp
     io/scene_parser.cpp
-    
+
     # Materials module
     materials/texture.hpp
     materials/checkerboard_texture.hpp
     materials/material.hpp
-    
+
     # Lighting module
     lighting/light.hpp
     lighting/phong.hpp
     lighting/phong.cpp
-    
+
     # Scene module
     scene/scene.hpp
     scene/scene.cpp
     scene/ray_tracer.hpp
     scene/ray_tracer.cpp
-    
+
     # Sampling module
     sampling/sample_pattern.hpp
     sampling/sample_pattern.cpp
@@ -58,7 +58,7 @@ file(MAKE_DIRECTORY ${QUASI_INCLUDE_DIR}/quasi)
 add_custom_target(copy_headers ALL
     # Copy all .hpp files while preserving directory structure
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR} ${QUASI_INCLUDE_DIR}/quasi
-    # Remove copied .cpp files - we only want headers in include directory  
+    # Remove copied .cpp files - we only want headers in include directory
     COMMAND ${CMAKE_COMMAND} -E rm -f ${QUASI_INCLUDE_DIR}/quasi/*/*.cpp
     COMMENT "Copying header files to build include directory"
 )
@@ -66,8 +66,8 @@ add_custom_target(copy_headers ALL
 add_dependencies(quasi copy_headers)
 
 # Set up include directories for the library
-target_include_directories(quasi 
-    PUBLIC 
+target_include_directories(quasi
+    PUBLIC
         $<BUILD_INTERFACE:${QUASI_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
