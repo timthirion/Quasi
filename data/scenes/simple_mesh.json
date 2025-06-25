@@ -1,0 +1,50 @@
+{
+  "camera": {
+    "position": [0.0, 0.4, 1.2],
+    "look_at": [0.0, 0.2, 0.0],
+    "up": [0.0, 1.0, 0.0],
+    "fov": 35.0
+  },
+  "render": {
+    "width": 400,
+    "height": 400,
+    "multisampling": {
+      "samples_per_pixel": 1,
+      "sampling_pattern": "blue_noise",
+      "sample_integrator": "average"
+    }
+  },
+  "background": {
+    "type": "checkerboard",
+    "color1": [0.1, 0.1, 0.1],
+    "color2": [0.2, 0.2, 0.2],
+    "rows": 8,
+    "columns": 8,
+    "distance": 10.0
+  },
+  "objects": [],
+  "meshes": [
+    {
+      "filename": "/Users/tt/src/Quasi/data/models/bunny.json",
+      "position": [0.0, -0.06, 0.0],
+      "scale": 3.0,
+      "color": [0.9, 0.7, 0.5],
+      "reflectance": 0.1
+    }
+  ],
+  "boxes": [],
+  "lights": [
+    {
+      "type": "rectangular_area_light",
+      "position": [0.3, 0.6, 0.4],
+      "color": [1.0, 1.0, 1.0],
+      "intensity": 4.0,
+      "width": 0.4,
+      "height": 0.4,
+      "u_axis": [1.0, 0.0, 0.0],
+      "v_axis": [0.0, 0.0, 1.0],
+      "samples": 4,
+      "sampling_method": "uniform"
+    }
+  ]
+}

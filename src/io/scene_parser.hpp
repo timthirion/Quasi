@@ -88,6 +88,16 @@ namespace Q {
       SceneTriangle() : reflectance(0.0f) {}
     };
 
+    struct SceneMesh {
+      std::string filename;
+      Vec3 position;
+      float scale;
+      Color color;
+      float reflectance;
+
+      SceneMesh() : position(0, 0, 0), scale(1.0f), reflectance(0.0f) {}
+    };
+
     struct SceneLight {
       Vec3 position;
       Color color;
@@ -115,6 +125,7 @@ namespace Q {
       std::vector<SceneSphere> spheres;
       std::vector<SceneTriangle> triangles;
       std::vector<SceneBox> boxes;
+      std::vector<SceneMesh> meshes;
       std::vector<SceneLight> lights;
     };
 
