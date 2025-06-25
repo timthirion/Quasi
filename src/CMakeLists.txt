@@ -11,6 +11,8 @@ add_library(quasi
     geometry/sphere.hpp
     geometry/box.cpp
     geometry/box.hpp
+    geometry/mesh.cpp
+    geometry/mesh.hpp
     geometry/reflection.hpp
     geometry/geometry.hpp
 

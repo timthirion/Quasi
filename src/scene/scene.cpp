@@ -48,6 +48,20 @@ namespace Q {
         add_box(box, material);
       }
 
+      // Add meshes
+      for (const auto &mesh_data : scene_data.meshes) {
+        try {
+          Q::geometry::Mesh mesh = Q::geometry::MeshReader::load_from_json(mesh_data.filename);
+          mesh.transform(mesh_data.position, mesh_data.scale);
+          auto material =
+              std::make_shared<Q::materials::SolidMaterial>(mesh_data.color, mesh_data.reflectance);
+          add_mesh(mesh, material);
+        } catch (const std::exception &e) {
+          std::cerr << "Failed to load mesh from " << mesh_data.filename << ": " << e.what()
+                    << std::endl;
+        }
+      }
+
       // Add lights
       std::cout << "Processing " << scene_data.lights.size() << " lights from scene data"
                 << std::endl;
@@ -94,6 +108,11 @@ namespace Q {
     void Scene::add_box(const Q::geometry::Box &box,
                         std::shared_ptr<Q::materials::Material> material) {
       boxes.emplace_back(box, material);
+    }
+
+    void Scene::add_mesh(const Q::geometry::Mesh &mesh,
+                         std::shared_ptr<Q::materials::Material> material) {
+      meshes.emplace_back(mesh, material);
     }
 
     void Scene::add_light(std::shared_ptr<Q::lighting::Light> light) {
@@ -291,6 +310,23 @@ namespace Q {
               hit_point = ray.origin + ray.direction * t;
               hit_normal = triangle.get_normal();
               hit_material = colored_box.material;
+              hit_anything = true;
+            }
+          }
+        }
+      }
+
+      // Check mesh intersections
+      for (const auto &colored_mesh : meshes) {
+        for (const auto &triangle : colored_mesh.mesh.triangles) {
+          auto result = intersect(ray, triangle);
+          if (result.has_value()) {
+            float t = result->t;
+            if (t > 0.001f && t < closest_t) {
+              closest_t = t;
+              hit_point = ray.origin + ray.direction * t;
+              hit_normal = triangle.get_normal();
+              hit_material = colored_mesh.material;
               hit_anything = true;
             }
           }

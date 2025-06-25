@@ -58,6 +58,14 @@ namespace Q {
           : triangle(t), material(mat) {}
     };
 
+    struct ColoredMesh {
+      Q::geometry::Mesh mesh;
+      std::shared_ptr<Q::materials::Material> material;
+
+      ColoredMesh(const Q::geometry::Mesh &m, std::shared_ptr<Q::materials::Material> mat)
+          : mesh(m), material(mat) {}
+    };
+
     struct TexturedTriangle {
       Q::geometry::Triangle triangle;
       Vec3 uv0, uv1, uv2; // UV coordinates for each vertex (z component unused)
@@ -73,6 +81,7 @@ namespace Q {
       std::vector<ColoredSphere> spheres;
       std::vector<ColoredTriangle> triangles;
       std::vector<ColoredBox> boxes;
+      std::vector<ColoredMesh> meshes;
       std::vector<TexturedTriangle> background_triangles;
       std::vector<std::shared_ptr<Q::lighting::Light>> lights;
       std::unique_ptr<Q::materials::CheckerboardTexture> background_texture;
@@ -92,6 +101,8 @@ namespace Q {
       void add_triangle(const Q::geometry::Triangle &triangle,
                         std::shared_ptr<Q::materials::Material> material);
       void add_box(const Q::geometry::Box &box, std::shared_ptr<Q::materials::Material> material);
+      void add_mesh(const Q::geometry::Mesh &mesh,
+                    std::shared_ptr<Q::materials::Material> material);
       void add_light(std::shared_ptr<Q::lighting::Light> light);
       Color trace_ray(const Ray &ray) const;
 

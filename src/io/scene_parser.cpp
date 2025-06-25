@@ -132,6 +132,21 @@ namespace Q {
           }
         }
 
+        // Parse meshes
+        if (scene_json.contains("meshes")) {
+          for (const auto &mesh_obj : scene_json["meshes"]) {
+            SceneMesh mesh;
+            mesh.filename = mesh_obj["filename"].get<std::string>();
+            mesh.position = parse_vec3(mesh_obj["position"]);
+            mesh.scale = mesh_obj.value("scale", 1.0f);
+            mesh.color = parse_color(mesh_obj["color"]);
+            if (mesh_obj.contains("reflectance")) {
+              mesh.reflectance = mesh_obj["reflectance"].get<float>();
+            }
+            scene.meshes.push_back(mesh);
+          }
+        }
+
         // Parse lights
         if (scene_json.contains("lights")) {
           for (const auto &light_obj : scene_json["lights"]) {

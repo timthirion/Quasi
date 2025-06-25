@@ -150,6 +150,12 @@ namespace geometry {
 - **All file names must be lowercase** - Use underscores for word separation (e.g., `ppm_writer.hpp`)
 - **External includes use quasi/ prefix** - Applications should include `<quasi/module/file.hpp>`
 
+### Git Workflow Requirements
+- **Use `git mv` for file moves** - Always use `git mv` instead of `mv` + `git add` to preserve git history
+- **Use `git mv` for directory reorganization** - When restructuring directories, use `git mv` to maintain version control history
+- **Example**: `git mv scenes/ data/scenes/` instead of `mv scenes/ data/` followed by `git add data/`
+- **Rationale**: Preserves file history, blame information, and makes diffs cleaner
+
 ### Library Architecture  
 - **Unified libquasi**: Single library contains all core functionality
 - **Modular organization**: Code organized into logical modules (geometry, radiometry, io, materials)
