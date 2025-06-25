@@ -9,7 +9,7 @@
     "width": 512,
     "height": 512,
     "multisampling": {
-      "samples_per_pixel": 8,
+      "samples_per_pixel": 4,
       "sampling_pattern": "blue_noise",
       "sample_integrator": "average"
     }
@@ -28,14 +28,14 @@
       "center": [-0.3, -0.7, 0.2],
       "radius": 0.3,
       "color": [0.9, 0.9, 0.9],
-      "reflectance": 0.2
+      "reflectance": 0.3
     },
     {
       "type": "sphere",
       "center": [0.4, -0.6, -0.3],
       "radius": 0.35,
       "color": [0.8, 0.8, 0.9],
-      "reflectance": 0.6
+      "reflectance": 0.7
     }
   ],
   "boxes": [
@@ -58,7 +58,7 @@
       "min": [-1.0, -1.0, -1.0],
       "max": [1.0, -0.99, 1.0],
       "color": [0.9, 0.9, 0.9],
-      "reflectance": 0.3
+      "reflectance": 0.4
     },
     {
       "type": "box",
@@ -72,7 +72,7 @@
       "min": [-1.0, -1.0, -1.0],
       "max": [1.0, 1.0, -0.99],
       "color": [0.9, 0.9, 0.9],
-      "reflectance": 0.1
+      "reflectance": 0.15
     },
     {
       "type": "box",
@@ -94,7 +94,7 @@
       "type": "point_light",
       "position": [0.0, 0.8, 0.0],
       "color": [1.0, 1.0, 1.0],
-      "intensity": 2.0
+      "intensity": 1.2
     }
   ]
 }
