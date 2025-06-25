@@ -174,8 +174,9 @@ int main(int argc, char *argv[]) {
 
         // Update progress display with percentage (no newline, overwrite previous output)
         int percentage = (int) ((float) current_ray / (float) total_rays * 100.0f);
-        std::cout << "\rRay " << current_ray << "/" << total_rays << " " << percentage << "%"
-                  << std::flush;
+        int width = std::to_string(total_rays).length();
+        std::cout << "\rRay " << std::setw(width) << current_ray << "/" << total_rays << " "
+                  << std::setw(3) << percentage << "%" << std::flush;
       }
     }
 
@@ -191,15 +192,15 @@ int main(int argc, char *argv[]) {
     long long rays_per_second = (long long) (total_rays / seconds);
 
     if (ms < 1000) {
-      std::cout << "Rendering completed in " << ms << " ms at " << rays_per_second << " rays/s"
-                << std::endl;
+      std::cout << total_rays << " rays traced in " << ms << " ms at " << rays_per_second
+                << " rays/s" << std::endl;
     } else if (ms < 60000) {
-      std::cout << "Rendering completed in " << std::fixed << std::setprecision(1) << seconds
+      std::cout << total_rays << " rays traced in " << std::fixed << std::setprecision(1) << seconds
                 << " s at " << rays_per_second << " rays/s" << std::endl;
     } else {
       int minutes = ms / 60000;
       double remaining_seconds = (ms % 60000) / 1000.0;
-      std::cout << "Rendering completed in " << minutes << " min " << std::fixed
+      std::cout << total_rays << " rays traced in " << minutes << " min " << std::fixed
                 << std::setprecision(1) << remaining_seconds << " s at " << rays_per_second
                 << " rays/s" << std::endl;
     }

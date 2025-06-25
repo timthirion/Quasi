@@ -92,6 +92,20 @@ namespace Q {
       Vec3 position;
       Color color;
       float intensity;
+      std::string type;
+
+      // Area light specific parameters
+      Vec3 u_axis;
+      Vec3 v_axis;
+      float width;
+      float height;
+      int samples;
+      std::string sampling_method;
+
+      // Default constructor for point lights
+      SceneLight()
+          : type("point_light"), width(0.0f), height(0.0f), samples(16),
+            sampling_method("stratified") {}
     };
 
     struct SceneData {

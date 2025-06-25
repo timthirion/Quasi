@@ -1,5 +1,6 @@
 #include "sample_pattern.hpp"
 #include "blue_noise_pattern.hpp"
+#include "poisson_disk_pattern.hpp"
 #include "stratified_pattern.hpp"
 #include <stdexcept>
 
@@ -11,6 +12,8 @@ namespace Q {
         return std::make_unique<StratifiedPattern>();
       } else if (pattern_name == "blue_noise") {
         return std::make_unique<BlueNoisePattern>();
+      } else if (pattern_name == "poisson_disk") {
+        return std::make_unique<PoissonDiskPattern>();
       }
 
       throw std::invalid_argument("Unknown sampling pattern: " + pattern_name);

@@ -1,5 +1,6 @@
 #include "scene.hpp"
 #include <cmath>
+#include <iostream>
 #include <limits>
 
 namespace Q {
@@ -48,10 +49,30 @@ namespace Q {
       }
 
       // Add lights
+      std::cout << "Processing " << scene_data.lights.size() << " lights from scene data"
+                << std::endl;
       for (const auto &light_data : scene_data.lights) {
-        auto light = std::make_shared<Q::lighting::PointLight>(
-            light_data.position, light_data.color * light_data.intensity);
-        add_light(light);
+        if (light_data.type == "rectangular_area_light") {
+          // Create rectangular area light
+          std::cout << "Creating rectangular area light at position (" << light_data.position.x
+                    << ", " << light_data.position.y << ", " << light_data.position.z
+                    << ") with size " << light_data.width << "x" << light_data.height << " and "
+                    << light_data.samples << " samples using " << light_data.sampling_method
+                    << " sampling" << std::endl;
+          auto area_light = std::make_shared<Q::lighting::RectangularAreaLight>(
+              light_data.position, light_data.u_axis, light_data.v_axis, light_data.width,
+              light_data.height, light_data.color * light_data.intensity, light_data.samples,
+              light_data.sampling_method);
+          add_light(area_light);
+        } else {
+          // Default to point light (backward compatibility)
+          std::cout << "Creating point light at position (" << light_data.position.x << ", "
+                    << light_data.position.y << ", " << light_data.position.z
+                    << ") with type: " << light_data.type << std::endl;
+          auto point_light = std::make_shared<Q::lighting::PointLight>(
+              light_data.position, light_data.color * light_data.intensity);
+          add_light(point_light);
+        }
       }
     }
 

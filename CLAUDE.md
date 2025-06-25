@@ -77,6 +77,7 @@ External dependencies are built automatically via CMake ExternalProjects:
 - **Namespaces**: Use `lowercase` (e.g., `geometry`, `rendering`)
 - **Files**: Use `lowercase` with underscores for separation (e.g., `vec3.hpp`, `ppm_writer.hpp`)
 - **Headers**: Use `.hpp` extension for all header files
+- **Getters**: Use simple property name without `get_` prefix (e.g., `width()` not `get_width()`, `position()` not `get_position()`)
 
 ### Code Organization
 - **File Structure**: Generally use one class per header/source file pair unless classes are very simple or always work together

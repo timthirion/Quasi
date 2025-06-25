@@ -51,6 +51,8 @@ add_library(quasi
     sampling/stratified_pattern.cpp
     sampling/blue_noise_pattern.hpp
     sampling/blue_noise_pattern.cpp
+    sampling/poisson_disk_pattern.hpp
+    sampling/poisson_disk_pattern.cpp
     sampling/average_integrator.hpp
     sampling/average_integrator.cpp
     sampling/adaptive_integrator.hpp
