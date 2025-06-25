@@ -104,13 +104,13 @@
       "type": "point_light",
       "position": [-0.2, 0.8, 0.2],
       "color": [1.0, 1.0, 1.0],
-      "intensity": 2.2
+      "intensity": 1.0
     },
     {
       "type": "point_light",
       "position": [0.3, 0.7, -0.1],
       "color": [0.9, 0.95, 1.0],
-      "intensity": 1.8
+      "intensity": 0.8
     }
   ]
 }
