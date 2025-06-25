@@ -1,4 +1,3 @@
-#include "../rendering/tile_renderer.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -105,22 +104,108 @@ int main(int argc, char *argv[]) {
               << " samples per pixel with " << sample_pattern->get_name() << " sampling and "
               << sample_integrator->get_name() << " integration" << std::endl;
 
+    // Render the image
+    std::vector<Color> pixels(scene_data.render.width * scene_data.render.height);
+
     std::cout << "Rendering " << scene_data.render.width << "x" << scene_data.render.height
-              << " image using tile-based parallelism (" << std::thread::hardware_concurrency()
-              << " threads)..." << std::endl;
+              << " image..." << std::endl;
 
-    // Create and configure the tile renderer
-    Q::rendering::TileRenderer tile_renderer;
+    // Calculate total number of rays to cast
+    int total_pixels = scene_data.render.width * scene_data.render.height;
+    int samples_per_pixel = scene_data.render.multisampling.samples_per_pixel;
+    long long total_rays = (long long) total_pixels * samples_per_pixel;
+    long long current_ray = 0;
 
-    // Render the image asynchronously using tile-based parallelism
-    auto render_future = tile_renderer.render_async(scene_data, scene, ray_tracer,
-                                                    pinhole_camera.get(), dof_camera.get());
+    // Start timing
+    auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Wait for rendering to complete and get the result
-    std::vector<Color> pixels = render_future.get();
+    for (int y = 0; y < scene_data.render.height; ++y) {
+      for (int x = 0; x < scene_data.render.width; ++x) {
+        Color pixel_color;
+
+        // Handle adaptive sampling specially
+        if (scene_data.render.multisampling.sample_integrator == "adaptive") {
+          auto *adaptive_integrator = dynamic_cast<AdaptiveIntegrator *>(sample_integrator.get());
+          if (adaptive_integrator) {
+            pixel_color =
+                adaptive_integrator->integrate_adaptive(x, y, [&](const Sample2D &sample) -> Color {
+                  current_ray++;
+                  // Convert pixel coordinates to UV coordinates with sample offset
+                  float u = sample.x / static_cast<float>(scene_data.render.width);
+                  float v = (static_cast<float>(scene_data.render.height) - sample.y) /
+                            static_cast<float>(scene_data.render.height);
+
+                  Ray ray = use_depth_of_field ? dof_camera->get_ray(u, v)
+                                               : pinhole_camera->get_ray(u, v);
+                  return ray_tracer.trace_ray_with_reflections(ray);
+                });
+          } else {
+            // Fallback to regular sampling
+            current_ray += samples_per_pixel;
+            pixel_color = Color(1.0f, 0.0f, 1.0f); // Magenta error color
+          }
+        } else {
+          // Regular sampling
+          auto samples =
+              sample_pattern->generate_samples(scene_data.render.multisampling.samples_per_pixel);
+          std::vector<Color> sample_colors;
+          sample_colors.reserve(samples.size());
+
+          // Trace rays for each sample
+          for (const auto &sample : samples) {
+            current_ray++;
+            // Convert pixel coordinates to UV coordinates with sample offset
+            float u =
+                (static_cast<float>(x) + sample.x) / static_cast<float>(scene_data.render.width);
+            float v = (static_cast<float>(scene_data.render.height - 1 - y) + sample.y) /
+                      static_cast<float>(scene_data.render.height);
+
+            Ray ray =
+                use_depth_of_field ? dof_camera->get_ray(u, v) : pinhole_camera->get_ray(u, v);
+            Color sample_color = ray_tracer.trace_ray_with_reflections(ray);
+            sample_colors.push_back(sample_color);
+          }
+
+          // Integrate samples to get final pixel color
+          pixel_color = sample_integrator->integrate_samples(samples, sample_colors);
+        }
+
+        pixels[y * scene_data.render.width + x] = pixel_color;
+
+        // Update progress display with percentage (no newline, overwrite previous output)
+        int percentage = (int) ((float) current_ray / (float) total_rays * 100.0f);
+        std::cout << "\rRay " << current_ray << "/" << total_rays << " " << percentage << "%"
+                  << std::flush;
+      }
+    }
+
+    // Clear the progress line and move to next line
+    std::cout << "\r" << std::string(60, ' ') << "\r";
+
+    // Calculate and display rendering time with rays per second
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+    long long ms = duration.count();
+    double seconds = ms / 1000.0;
+    long long rays_per_second = (long long) (total_rays / seconds);
+
+    if (ms < 1000) {
+      std::cout << "Rendering completed in " << ms << " ms at " << rays_per_second << " rays/s"
+                << std::endl;
+    } else if (ms < 60000) {
+      std::cout << "Rendering completed in " << std::fixed << std::setprecision(1) << seconds
+                << " s at " << rays_per_second << " rays/s" << std::endl;
+    } else {
+      int minutes = ms / 60000;
+      double remaining_seconds = (ms % 60000) / 1000.0;
+      std::cout << "Rendering completed in " << minutes << " min " << std::fixed
+                << std::setprecision(1) << remaining_seconds << " s at " << rays_per_second
+                << " rays/s" << std::endl;
+    }
 
     // Write the image to file
-    std::string output_filename = "raytraced_spheres.ppm";
+    std::string output_filename = "raytraced_spheres_single.ppm";
     if (argc > 2) {
       output_filename = argv[2];
     }

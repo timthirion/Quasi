@@ -17,6 +17,14 @@ The superbuild automatically handles dependency management and ensures proper bu
 
 ## Essential Commands
 
+### Important Build Note
+**If you don't see expected output or encounter unexpected behavior, immediately do a full clean build:**
+```bash
+rm -rf build && mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build .
+```
+
 ### Building the Project
 ```bash
 # Clean build (recommended for first time)
@@ -30,9 +38,17 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
 ```
 
-### Running the Application
+### Running the Applications
 ```bash
 # From build directory
+
+# Multi-threaded tile-based ray tracer (default, recommended)
+./quasi-build/src/apps/rt [scene.json] [output.ppm]
+
+# Single-threaded ray tracer (reference implementation)
+./quasi-build/src/apps/rt_single [scene.json] [output.ppm]
+
+# Test application (GLFW windowing)
 ./quasi-build/src/apps/test_app
 ```
 
@@ -117,6 +133,15 @@ namespace geometry {
 } // namespace geometry
 } // namespace Q
 ```
+
+## Design Philosophy
+
+### Asynchronous Programming Preference
+- **Modern async APIs**: Prefer asynchronous APIs where they provide performance or design benefits
+- **Futures and promises**: Use std::future/std::promise for asynchronous task coordination
+- **Multithreading**: Leverage thread pools and parallel algorithms for CPU-intensive work
+- **Coroutines (C++20)**: Use coroutines for async I/O operations, task pipelines, and elegant async control flow
+- **Performance-first**: Choose async patterns that genuinely improve performance, not complexity for its own sake
 
 ## Project Rules
 
