@@ -62,16 +62,56 @@ namespace Q {
       Vec3 center = parse_vec3(json_data.value("center", nlohmann::json::array({0.0, 0.0, 0.0})));
       float scale = json_data.value("scale", 1.0f);
 
-      // Parse triangles
+      // Parse triangles - support both compact vertex/index format and explicit triangle format
       std::vector<Triangle> triangles;
-      if (json_data.contains("triangles") && json_data["triangles"].is_array()) {
+
+      bool has_vertices = json_data.contains("vertices");
+      bool has_indices = json_data.contains("indices");
+      bool has_triangles = json_data.contains("triangles");
+
+      // Try compact format first
+      auto vertices_it = json_data.find("vertices");
+      auto indices_it = json_data.find("indices");
+
+      if (vertices_it != json_data.end() && indices_it != json_data.end()) {
+        // New compact format: vertex buffer + index buffer
+        const auto &vertices_array = *vertices_it;
+        const auto &indices_array = *indices_it;
+
+        // Parse vertices (array of floats: x1,y1,z1,x2,y2,z2,...)
+        std::vector<Vec3> vertices;
+        if (vertices_array.is_array() && vertices_array.size() % 3 == 0) {
+          for (size_t i = 0; i < vertices_array.size(); i += 3) {
+            vertices.emplace_back(vertices_array[i].get<float>(),
+                                  vertices_array[i + 1].get<float>(),
+                                  vertices_array[i + 2].get<float>());
+          }
+        }
+
+        // Parse indices and build triangles
+        if (indices_array.is_array() && indices_array.size() % 3 == 0) {
+          for (size_t i = 0; i < indices_array.size(); i += 3) {
+            int idx0 = indices_array[i].get<int>();
+            int idx1 = indices_array[i + 1].get<int>();
+            int idx2 = indices_array[i + 2].get<int>();
+
+            if (idx0 >= 0 && idx1 >= 0 && idx2 >= 0 && idx0 < static_cast<int>(vertices.size()) &&
+                idx1 < static_cast<int>(vertices.size()) &&
+                idx2 < static_cast<int>(vertices.size())) {
+              triangles.emplace_back(vertices[idx0], vertices[idx1], vertices[idx2]);
+            } else {
+              std::cerr << "Invalid triangle indices: " << idx0 << ", " << idx1 << ", " << idx2
+                        << " (vertex count: " << vertices.size() << ")" << std::endl;
+            }
+          }
+        }
+
+      } else if (json_data.contains("triangles") && json_data["triangles"].is_array()) {
+        // Old explicit triangle format (backward compatibility)
         for (const auto &triangle_json : json_data["triangles"]) {
           triangles.push_back(parse_triangle(triangle_json));
         }
       }
-
-      std::cout << "Loaded mesh '" << name << "' with " << triangles.size() << " triangles"
-                << std::endl;
 
       return Mesh(triangles, name, center, scale);
     }

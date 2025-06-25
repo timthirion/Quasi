@@ -56,6 +56,7 @@ namespace Q {
           auto material =
               std::make_shared<Q::materials::SolidMaterial>(mesh_data.color, mesh_data.reflectance);
           add_mesh(mesh, material);
+          std::cout << "Loaded mesh with " << mesh.triangle_count() << " triangles" << std::endl;
         } catch (const std::exception &e) {
           std::cerr << "Failed to load mesh from " << mesh_data.filename << ": " << e.what()
                     << std::endl;
@@ -190,6 +191,32 @@ namespace Q {
                 hit_normal = hit_normal * -1.0f; // Flip if pointing away
               }
               hit_material = colored_box.material;
+              hit_anything = true;
+            }
+          }
+        }
+      }
+
+      // Check mesh intersections
+      for (const auto &colored_mesh : meshes) {
+        for (const auto &triangle : colored_mesh.mesh.triangles) {
+          auto result = intersect(ray, triangle);
+          if (result.has_value()) {
+            float t = result->t;
+            if (t > 0.001f && t < closest_t) {
+              closest_t = t;
+              hit_point = ray.origin + ray.direction * t;
+              // Calculate triangle normal (ensure it points outward)
+              auto edge1 = triangle.v1 - triangle.v0;
+              auto edge2 = triangle.v2 - triangle.v0;
+              hit_normal = edge1.cross(edge2).get_normalized();
+
+              // Ensure normal points toward camera (for proper lighting)
+              Vec3 to_camera = ray.origin - hit_point;
+              if (hit_normal.dot(to_camera) < 0) {
+                hit_normal = hit_normal * -1.0f; // Flip if pointing away
+              }
+              hit_material = colored_mesh.material;
               hit_anything = true;
             }
           }

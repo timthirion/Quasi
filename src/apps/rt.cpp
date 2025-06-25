@@ -120,9 +120,21 @@ int main(int argc, char *argv[]) {
     std::vector<Color> pixels = render_future.get();
 
     // Write the image to file
-    std::string output_filename = "raytraced_spheres.ppm";
+    std::string output_filename;
     if (argc > 2) {
       output_filename = argv[2];
+    } else {
+      // Generate filename based on scene name
+      std::string scene_path = argv[1];
+      size_t last_slash = scene_path.find_last_of('/');
+      size_t last_dot = scene_path.find_last_of('.');
+      if (last_slash != std::string::npos && last_dot != std::string::npos &&
+          last_dot > last_slash) {
+        std::string scene_name = scene_path.substr(last_slash + 1, last_dot - last_slash - 1);
+        output_filename = "rendered_" + scene_name + ".ppm";
+      } else {
+        output_filename = "raytraced_output.ppm";
+      }
     }
     // Use Reinhard tone mapping with gamma correction for better image quality
     PPMWriter::write_ppm(output_filename, pixels, scene_data.render.width, scene_data.render.height,
