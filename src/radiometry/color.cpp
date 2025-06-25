@@ -10,8 +10,17 @@ namespace Q::radiometry {
   }
 
   Color Color::tone_map_reinhard() const {
-    // Simple Reinhard tone mapping: color / (1 + color)
-    return Color(r / (1.0f + r), g / (1.0f + g), b / (1.0f + b));
+    // Luminance-based Reinhard tone mapping with white point
+    float lum = luminance();
+    float white_point = 2.0f; // Adjust this to control brightness
+    float mapped_lum = (lum * (1.0f + lum / (white_point * white_point))) / (1.0f + lum);
+
+    // Preserve color ratios
+    if (lum > 0.001f) {
+      float scale = mapped_lum / lum;
+      return Color(r * scale, g * scale, b * scale);
+    }
+    return *this;
   }
 
   Color Color::tone_map_exposure(float exposure) const {
@@ -23,15 +32,21 @@ namespace Q::radiometry {
   }
 
   Color Color::tone_map_aces() const {
-    // Simplified ACES tone mapping approximation
-    // This is a simplified version of the ACES RRT/ODT
+    // ACES tone mapping approximation (Narkowicz 2015)
+    // More conservative parameters for natural-looking results
     const float a = 2.51f;
     const float b = 0.03f;
     const float c = 2.43f;
     const float d = 0.59f;
     const float e = 0.14f;
 
-    auto aces_curve = [=](float x) { return (x * (a * x + b)) / (x * (c * x + d) + e); };
+    // Pre-exposure adjustment to prevent over-brightening
+    const float pre_exposure = 0.6f;
+
+    auto aces_curve = [=](float x) {
+      x *= pre_exposure;
+      return std::clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0f, 1.0f);
+    };
 
     return Color(aces_curve(r), aces_curve(g), aces_curve(b));
   }
