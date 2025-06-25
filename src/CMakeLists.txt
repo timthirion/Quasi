@@ -57,6 +57,10 @@ add_library(quasi
     sampling/average_integrator.cpp
     sampling/adaptive_integrator.hpp
     sampling/adaptive_integrator.cpp
+
+    # Rendering module
+    rendering/tile_renderer.hpp
+    rendering/tile_renderer.cpp
 )
 
 # Create include directory structure in build directory
