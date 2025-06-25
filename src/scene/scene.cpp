@@ -80,7 +80,6 @@ namespace Q {
     }
 
     Color Scene::trace_ray(const Ray &ray) const {
-
       float closest_t = std::numeric_limits<float>::max();
       Color hit_color;
       Vec3 hit_point;
@@ -162,9 +161,14 @@ namespace Q {
         // Calculate view direction (from hit point to camera)
         Vec3 view_direction = (ray.origin - hit_point).get_normalized();
 
-        // Apply Phong lighting
+        // Create shadow test function using this scene's shadow testing
+        auto shadow_test = [this](const Vec3 &point, const Vec3 &light_dir, float light_dist) {
+          return this->is_in_shadow(point, light_dir, light_dist);
+        };
+
+        // Apply Phong lighting with shadow testing
         hit_color = Q::lighting::PhongLighting::calculate_lighting(
-            hit_point, hit_normal, view_direction, *hit_material, lights);
+            hit_point, hit_normal, view_direction, *hit_material, lights, shadow_test);
 
         return hit_color;
       }
@@ -277,6 +281,28 @@ namespace Q {
       }
 
       return std::nullopt;
+    }
+
+    bool Scene::is_in_shadow(const Vec3 &surface_point, const Vec3 &light_direction,
+                             float light_distance) const {
+      // Use conservative bias to prevent self-intersection
+      const float shadow_bias = 0.01f; // Slightly larger bias for cleaner shadows
+
+      // Create shadow ray with bias along light direction to avoid self-intersection
+      Vec3 shadow_origin = surface_point + light_direction * shadow_bias;
+      Ray shadow_ray(shadow_origin, light_direction);
+
+      // Check for any intersection between surface and light
+      auto intersection = find_closest_intersection(shadow_ray);
+
+      // If we hit something and it's closer than the light, we're in shadow
+      if (intersection.has_value()) {
+        float hit_distance = intersection->distance;
+        return hit_distance < (light_distance - shadow_bias);
+      }
+
+      // No obstruction found - not in shadow
+      return false;
     }
 
   } // namespace scene

@@ -98,6 +98,10 @@ namespace Q {
       // Find closest intersection for reflection ray tracing
       std::optional<Intersection> find_closest_intersection(const Ray &ray) const;
 
+      // Shadow ray testing for point lights
+      bool is_in_shadow(const Vec3 &surface_point, const Vec3 &light_direction,
+                        float light_distance) const;
+
     private:
       void setup_background(const Q::io::BackgroundSettings &bg_settings,
                             const Q::io::SceneCamera &camera_settings,
