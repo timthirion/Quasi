@@ -18,26 +18,63 @@ namespace Q {
 
       // Add contribution from each light
       for (const auto &light : lights) {
-        Vec3 light_direction = light->get_direction_to_light(surface_point);
-        Color light_intensity = light->get_intensity(surface_point);
+        if (light->is_area_light()) {
+          // Handle area lights with multiple samples for soft shadows
+          const int num_samples = 16; // Could be configurable per light
+          auto samples = light->generate_samples(surface_point, num_samples);
 
-        // Check for shadows if shadow test function is provided
-        bool in_shadow = false;
-        if (shadow_test) {
-          float light_distance = light->get_distance(surface_point);
-          in_shadow = shadow_test(surface_point, light_direction, light_distance);
-        }
+          Color total_diffuse(0.0f, 0.0f, 0.0f);
+          Color total_specular(0.0f, 0.0f, 0.0f);
+          float shadow_factor = 0.0f; // Accumulate shadow coverage
 
-        if (!in_shadow) {
-          // Add diffuse contribution
-          Color diffuse =
-              calculate_diffuse(light_direction, surface_normal, light_intensity, material);
-          final_color = final_color + diffuse;
+          for (const auto &sample : samples) {
+            // Check shadow for this sample
+            bool sample_in_shadow = false;
+            if (shadow_test) {
+              sample_in_shadow = shadow_test(surface_point, sample.direction, sample.distance);
+            }
 
-          // Add specular contribution
-          Color specular = calculate_specular(light_direction, surface_normal, view_direction,
-                                              light_intensity, material);
-          final_color = final_color + specular;
+            if (!sample_in_shadow) {
+              shadow_factor += sample.weight;
+
+              // Add weighted diffuse contribution
+              Color diffuse =
+                  calculate_diffuse(sample.direction, surface_normal, sample.intensity, material);
+              total_diffuse = total_diffuse + diffuse * sample.weight;
+
+              // Add weighted specular contribution
+              Color specular = calculate_specular(sample.direction, surface_normal, view_direction,
+                                                  sample.intensity, material);
+              total_specular = total_specular + specular * sample.weight;
+            }
+          }
+
+          // Add accumulated contributions (already weighted by shadow factor)
+          final_color = final_color + total_diffuse + total_specular;
+
+        } else {
+          // Handle point lights with single sample (existing behavior)
+          Vec3 light_direction = light->get_direction_to_light(surface_point);
+          Color light_intensity = light->get_intensity(surface_point);
+
+          // Check for shadows if shadow test function is provided
+          bool in_shadow = false;
+          if (shadow_test) {
+            float light_distance = light->get_distance(surface_point);
+            in_shadow = shadow_test(surface_point, light_direction, light_distance);
+          }
+
+          if (!in_shadow) {
+            // Add diffuse contribution
+            Color diffuse =
+                calculate_diffuse(light_direction, surface_normal, light_intensity, material);
+            final_color = final_color + diffuse;
+
+            // Add specular contribution
+            Color specular = calculate_specular(light_direction, surface_normal, view_direction,
+                                                light_intensity, material);
+            final_color = final_color + specular;
+          }
         }
       }
 

@@ -6,8 +6,8 @@
     "fov": 35.0
   },
   "render": {
-    "width": 512,
-    "height": 512,
+    "width": 1024,
+    "height": 1024,
     "multisampling": {
       "samples_per_pixel": 8,
       "sampling_pattern": "blue_noise",
@@ -91,10 +91,16 @@
   ],
   "lights": [
     {
-      "type": "point_light",
-      "position": [0.0, 0.8, 0.0],
-      "color": [1.0, 1.0, 1.0],
-      "intensity": 1.2
+      "type": "rectangular_area_light",
+      "position": [0.0, 0.9, 0.0],
+      "color": [1.0, 1.0, 0.95],
+      "intensity": 3.0,
+      "width": 0.6,
+      "height": 0.6,
+      "u_axis": [1.0, 0.0, 0.0],
+      "v_axis": [0.0, 0.0, 1.0],
+      "samples": 64,
+      "sampling_method": "poisson_disk"
     }
   ]
 }

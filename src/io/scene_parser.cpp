@@ -139,6 +139,34 @@ namespace Q {
             light.position = parse_vec3(light_obj["position"]);
             light.color = parse_color(light_obj["color"]);
             light.intensity = light_obj["intensity"].get<float>();
+
+            // Parse light type (default to point_light for backward compatibility)
+            if (light_obj.contains("type")) {
+              light.type = light_obj["type"].get<std::string>();
+            }
+
+            // Parse area light specific parameters
+            if (light.type == "rectangular_area_light") {
+              if (light_obj.contains("width")) {
+                light.width = light_obj["width"].get<float>();
+              }
+              if (light_obj.contains("height")) {
+                light.height = light_obj["height"].get<float>();
+              }
+              if (light_obj.contains("u_axis")) {
+                light.u_axis = parse_vec3(light_obj["u_axis"]);
+              }
+              if (light_obj.contains("v_axis")) {
+                light.v_axis = parse_vec3(light_obj["v_axis"]);
+              }
+              if (light_obj.contains("samples")) {
+                light.samples = light_obj["samples"].get<int>();
+              }
+              if (light_obj.contains("sampling_method")) {
+                light.sampling_method = light_obj["sampling_method"].get<std::string>();
+              }
+            }
+
             scene.lights.push_back(light);
           }
         }
