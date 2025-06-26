@@ -37,6 +37,20 @@ namespace Q {
       float get_length() const;
       Vec3 get_normalized() const;
 
+      // Array access for BVH operations
+      float operator[](int index) const {
+        switch (index) {
+        case 0:
+          return x;
+        case 1:
+          return y;
+        case 2:
+          return z;
+        default:
+          return 0.0f;
+        }
+      }
+
       // Backward compatibility aliases
       float dot_product(const Vec3 &other) const { return dot(other); }
       Vec3 cross_product(const Vec3 &other) const { return cross(other); }

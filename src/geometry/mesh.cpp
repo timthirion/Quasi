@@ -12,6 +12,22 @@ namespace Q {
                float scale)
         : triangles(triangles), name(name), center(center), scale(scale) {}
 
+    Mesh::Mesh(const Mesh &other)
+        : triangles(other.triangles), name(other.name), center(other.center), scale(other.scale) {
+      // Note: BVH is not copied - it will be rebuilt when needed
+      // This is intentional for performance reasons
+    }
+
+    Mesh &Mesh::operator=(const Mesh &other) {
+      if (this != &other) {
+        triangles = other.triangles;
+        name = other.name;
+        center = other.center;
+        scale = other.scale;
+        bvh.reset(); // Clear existing BVH - will be rebuilt when needed
+      }
+      return *this;
+    }
     void Mesh::transform(const Vec3 &translation, float scale_factor) {
       for (auto &triangle : triangles) {
         // Scale around origin first, then translate
@@ -21,6 +37,9 @@ namespace Q {
       }
       scale *= scale_factor;
       center = center + translation;
+
+      // BVH is now invalid after transformation - will be rebuilt when needed
+      bvh.reset();
     }
 
     void Mesh::get_bounds(Vec3 &min_bounds, Vec3 &max_bounds) const {
@@ -132,5 +151,95 @@ namespace Q {
       return Vec3(vec_json[0].get<float>(), vec_json[1].get<float>(), vec_json[2].get<float>());
     }
 
+    void Mesh::build_bvh() {
+      if (triangles.empty()) {
+        bvh.reset();
+        return;
+      }
+
+      if (!bvh) {
+        bvh = std::make_unique<MeshBVH>();
+      }
+
+      bvh->build(triangles);
+    }
+
+    std::optional<IntersectionResult> Mesh::intersect_ray(const Ray &ray) const {
+      // Build BVH if not already built
+      if (!bvh && !triangles.empty()) {
+        // Note: This modifies the mesh, but it's a performance optimization
+        // In a more sophisticated implementation, we might want to build BVH explicitly
+        const_cast<Mesh *>(this)->build_bvh();
+      }
+
+      if (bvh) {
+        return bvh->intersect(ray);
+      }
+
+      // Fallback to brute force if no BVH
+      float closest_t = std::numeric_limits<float>::max();
+      IntersectionResult best_hit;
+      bool found_hit = false;
+
+      for (const auto &triangle : triangles) {
+        auto result = Q::geometry::intersect(ray, triangle);
+        if (result.has_value() && result->t > 0.001f && result->t < closest_t) {
+          closest_t = result->t;
+          best_hit = *result;
+          found_hit = true;
+        }
+      }
+
+      return found_hit ? std::optional{best_hit} : std::nullopt;
+    }
+
+    std::optional<MeshIntersectionResult> Mesh::intersect_ray_enhanced(const Ray &ray) const {
+      // Build BVH if not already built
+      if (!bvh && !triangles.empty()) {
+        std::cout << "Building BVH for mesh with " << triangles.size() << " triangles" << std::endl;
+        const_cast<Mesh *>(this)->build_bvh();
+      }
+
+      if (bvh) {
+        return bvh->intersect_enhanced(ray);
+      }
+
+      // Fallback to brute force if no BVH
+      float closest_t = std::numeric_limits<float>::max();
+      MeshIntersectionResult best_hit;
+      bool found_hit = false;
+
+      for (uint32_t i = 0; i < triangles.size(); ++i) {
+        const Triangle &triangle = triangles[i];
+        auto result = Q::geometry::intersect(ray, triangle);
+        if (result.has_value() && result->t > 0.001f && result->t < closest_t) {
+          closest_t = result->t;
+
+          // Calculate proper normal from triangle vertices
+          Vec3 edge1 = triangle.v1 - triangle.v0;
+          Vec3 edge2 = triangle.v2 - triangle.v0;
+          Vec3 normal = edge1.cross(edge2).get_normalized();
+
+          // Ensure normal points toward camera
+          Vec3 to_camera = ray.origin - result->point;
+          if (normal.dot(to_camera) < 0) {
+            normal = normal * -1.0f;
+          }
+
+          best_hit =
+              MeshIntersectionResult(result->t, result->point, normal, result->barycentric, i);
+          found_hit = true;
+        }
+      }
+
+      return found_hit ? std::optional{best_hit} : std::nullopt;
+    }
+
+    std::optional<MeshBVH::Stats> Mesh::get_bvh_stats() const {
+      if (bvh) {
+        return bvh->get_stats();
+      }
+      return std::nullopt;
+    }
   } // namespace geometry
 } // namespace Q
