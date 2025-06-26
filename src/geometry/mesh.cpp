@@ -28,7 +28,6 @@ namespace Q {
       }
       return *this;
     }
-
     void Mesh::transform(const Vec3 &translation, float scale_factor) {
       for (auto &triangle : triangles) {
         // Scale around origin first, then translate
@@ -242,6 +241,5 @@ namespace Q {
       }
       return std::nullopt;
     }
-
   } // namespace geometry
 } // namespace Q
