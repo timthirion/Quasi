@@ -20,7 +20,9 @@ namespace Q {
       for (const auto &light : lights) {
         if (light->is_area_light()) {
           // Handle area lights with multiple samples for soft shadows
-          const int num_samples = 16; // Could be configurable per light
+          // Use the light's configured sample count for proper soft shadows
+          auto area_light = std::dynamic_pointer_cast<RectangularAreaLight>(light);
+          const int num_samples = area_light ? area_light->default_samples() : 16;
           auto samples = light->generate_samples(surface_point, num_samples);
 
           Color total_diffuse(0.0f, 0.0f, 0.0f);

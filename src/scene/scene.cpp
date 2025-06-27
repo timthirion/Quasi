@@ -67,15 +67,24 @@ namespace Q {
       std::cout << "Processing " << scene_data.lights.size() << " lights from scene data"
                 << std::endl;
       for (const auto &light_data : scene_data.lights) {
-        if (light_data.type == "rectangular_area_light") {
+        if (light_data.type == "rectangular_area_light" || light_data.type == "area_light") {
           // Create rectangular area light
           std::cout << "Creating rectangular area light at position (" << light_data.position.x
                     << ", " << light_data.position.y << ", " << light_data.position.z
                     << ") with size " << light_data.width << "x" << light_data.height << " and "
                     << light_data.samples << " samples using " << light_data.sampling_method
                     << " sampling" << std::endl;
+          // Provide default u_axis and v_axis if not specified
+          Vec3 u_axis = light_data.u_axis;
+          Vec3 v_axis = light_data.v_axis;
+          if (u_axis.get_length() == 0.0f && v_axis.get_length() == 0.0f) {
+            // Default to horizontal rectangle aligned with X and Z axes
+            u_axis = Vec3(1.0f, 0.0f, 0.0f); // X axis
+            v_axis = Vec3(0.0f, 0.0f, 1.0f); // Z axis
+          }
+          
           auto area_light = std::make_shared<Q::lighting::RectangularAreaLight>(
-              light_data.position, light_data.u_axis, light_data.v_axis, light_data.width,
+              light_data.position, u_axis, v_axis, light_data.width,
               light_data.height, light_data.color * light_data.intensity, light_data.samples,
               light_data.sampling_method);
           add_light(area_light);
