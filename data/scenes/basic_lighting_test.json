@@ -7,7 +7,12 @@
   },
   "render": {
     "width": 128,
-    "height": 128
+    "height": 128,
+    "multisampling": {
+      "samples_per_pixel": 8,
+      "sampling_pattern": "stratified",
+      "sample_integrator": "average"
+    }
   },
   "background": {
     "type": "checkerboard",
@@ -28,10 +33,13 @@
   "boxes": [],
   "lights": [
     {
-      "type": "point_light",
+      "type": "area_light",
       "position": [1.0, 1.0, 1.0],
       "color": [1.0, 1.0, 1.0],
-      "intensity": 1.0
+      "intensity": 1.0,
+      "width": 0.2,
+      "height": 0.2,
+      "samples": 16
     }
   ]
 }
