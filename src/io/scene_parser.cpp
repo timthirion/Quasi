@@ -162,7 +162,7 @@ namespace Q {
             }
 
             // Parse area light specific parameters
-            if (light.type == "rectangular_area_light") {
+            if (light.type == "rectangular_area_light" || light.type == "area_light") {
               if (light_obj.contains("width")) {
                 light.width = light_obj["width"].get<float>();
               }
