@@ -1,9 +1,12 @@
 #include <Metal/Metal.h>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <quasi/geometry/geometry.hpp>
 #include <quasi/io/scene_parser.hpp>
 #include <quasi/radiometry/color.hpp>
+#include <quasi/scene/scene.hpp>
 #include <simd/simd.h>
 #include <vector>
 
