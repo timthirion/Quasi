@@ -23,6 +23,9 @@ if(APPLE)
     target_link_libraries(rt_metal PRIVATE quasi)
     target_compile_features(rt_metal PRIVATE cxx_std_23)
     
+    # Compile as Objective-C++ to handle Metal framework headers
+    set_source_files_properties(rt_metal.cpp PROPERTIES COMPILE_FLAGS "-x objective-c++")
+    
     # Link Metal framework on macOS
     find_library(METAL_FRAMEWORK Metal)
     find_library(FOUNDATION_FRAMEWORK Foundation)
