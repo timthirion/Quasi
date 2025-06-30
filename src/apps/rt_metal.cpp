@@ -10,7 +10,10 @@
 #include <simd/simd.h>
 #include <vector>
 
-using namespace Q;
+using namespace Q::geometry;
+using namespace Q::radiometry;
+using namespace Q::io;
+using namespace Q::scene;
 
 // Metal structures matching the shader definitions
 struct MetalRay {
@@ -211,7 +214,8 @@ int main(int argc, char *argv[]) {
   // Parse scene
   Scene scene;
   try {
-    scene = parse_scene_file(scene_file);
+    auto scene_data = SceneParser::parse_scene_file(scene_file);
+    scene = Scene(scene_data);
   } catch (const std::exception &e) {
     std::cerr << "Error parsing scene: " << e.what() << std::endl;
     return 1;
