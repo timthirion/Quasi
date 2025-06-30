@@ -75,43 +75,44 @@ struct MetalRenderParams {
 };
 
 // Convert scene data to Metal format
-MetalSceneData convertToMetalScene(const Scene &scene, uint32_t width, uint32_t height) {
+MetalSceneData convertToMetalScene(const Q::io::SceneData &scene_data, uint32_t width,
+                                   uint32_t height) {
   MetalSceneData metalScene = {};
 
   // Camera
-  auto camera = scene.camera();
-  metalScene.camera.position =
-      simd_make_float3(camera.position().x, camera.position().y, camera.position().z);
-  metalScene.camera.look_at =
-      simd_make_float3(camera.look_at().x, camera.look_at().y, camera.look_at().z);
-  metalScene.camera.up = simd_make_float3(camera.up().x, camera.up().y, camera.up().z);
-  metalScene.camera.fov = camera.fov();
+  metalScene.camera.position = simd_make_float3(
+      scene_data.camera.position.x, scene_data.camera.position.y, scene_data.camera.position.z);
+  metalScene.camera.look_at = simd_make_float3(
+      scene_data.camera.look_at.x, scene_data.camera.look_at.y, scene_data.camera.look_at.z);
+  metalScene.camera.up =
+      simd_make_float3(scene_data.camera.up.x, scene_data.camera.up.y, scene_data.camera.up.z);
+  metalScene.camera.fov = scene_data.camera.fov;
   metalScene.camera.aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
 
   // Background color
-  auto bg = scene.background_color();
-  metalScene.background_color = simd_make_float3(bg.r, bg.g, bg.b);
+  metalScene.background_color =
+      simd_make_float3(scene_data.background.color1.r, scene_data.background.color1.g,
+                       scene_data.background.color1.b);
 
   // Objects (spheres)
-  const auto &objects = scene.objects();
-  metalScene.num_spheres = std::min(static_cast<int>(objects.size()), 32);
+  metalScene.num_spheres = std::min(static_cast<int>(scene_data.spheres.size()), 32);
   for (int i = 0; i < metalScene.num_spheres; i++) {
-    const auto &obj = objects[i];
-    metalScene.spheres[i].center = simd_make_float3(obj.center.x, obj.center.y, obj.center.z);
-    metalScene.spheres[i].radius = obj.radius;
-    metalScene.spheres[i].color = simd_make_float3(obj.color.r, obj.color.g, obj.color.b);
-    metalScene.spheres[i].reflectivity = obj.reflectance;
+    const auto &sphere = scene_data.spheres[i];
+    metalScene.spheres[i].center =
+        simd_make_float3(sphere.center.x, sphere.center.y, sphere.center.z);
+    metalScene.spheres[i].radius = sphere.radius;
+    metalScene.spheres[i].color = simd_make_float3(sphere.color.r, sphere.color.g, sphere.color.b);
+    metalScene.spheres[i].reflectivity = sphere.reflectance;
   }
 
   // Triangles from boxes
-  const auto &boxes = scene.boxes();
   metalScene.num_triangles = 0;
-  for (const auto &box : boxes) {
+  for (const auto &box : scene_data.boxes) {
     if (metalScene.num_triangles >= 120)
       break; // Leave room for safety
 
-    Vec3 min = box.min;
-    Vec3 max = box.max;
+    Vec3 min = box.min_corner;
+    Vec3 max = box.max_corner;
     Color color = box.color;
     float reflectance = box.reflectance;
 
@@ -161,15 +162,14 @@ MetalSceneData convertToMetalScene(const Scene &scene, uint32_t width, uint32_t 
   }
 
   // Lights
-  const auto &lights = scene.lights();
-  metalScene.num_lights = std::min(static_cast<int>(lights.size()), 16);
+  metalScene.num_lights = std::min(static_cast<int>(scene_data.lights.size()), 16);
   for (int i = 0; i < metalScene.num_lights; i++) {
-    const auto &light = lights[i];
+    const auto &light = scene_data.lights[i];
     metalScene.lights[i].position =
         simd_make_float3(light.position.x, light.position.y, light.position.z);
     metalScene.lights[i].color = simd_make_float3(light.color.r, light.color.g, light.color.b);
     metalScene.lights[i].intensity = light.intensity;
-    metalScene.lights[i].type = (light.type == LightType::Point) ? 0 : 1;
+    metalScene.lights[i].type = (light.type == "point_light") ? 0 : 1;
     metalScene.lights[i].width = light.width;
     metalScene.lights[i].height = light.height;
     metalScene.lights[i].samples = light.samples;
@@ -212,20 +212,19 @@ int main(int argc, char *argv[]) {
   std::cout << "Metal Ray Tracer - rendering scene: " << scene_file << std::endl;
 
   // Parse scene
-  Scene scene;
+  Q::io::SceneData scene_data;
   try {
-    auto scene_data = SceneParser::parse_scene_file(scene_file);
-    scene = Scene(scene_data);
+    scene_data = SceneParser::parse_scene_file(scene_file);
   } catch (const std::exception &e) {
     std::cerr << "Error parsing scene: " << e.what() << std::endl;
     return 1;
   }
 
   // Display parsed scene info
-  std::cout << "Processing " << scene.lights().size() << " lights from scene data" << std::endl;
-  for (size_t i = 0; i < scene.lights().size(); i++) {
-    const auto &light = scene.lights()[i];
-    if (light.type == LightType::Point) {
+  std::cout << "Processing " << scene_data.lights.size() << " lights from scene data" << std::endl;
+  for (size_t i = 0; i < scene_data.lights.size(); i++) {
+    const auto &light = scene_data.lights[i];
+    if (light.type == "point_light") {
       std::cout << "Creating point light at position (" << light.position.x << ", "
                 << light.position.y << ", " << light.position.z << ") with type: point_light"
                 << std::endl;
@@ -238,8 +237,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Get render dimensions
-  uint32_t width = scene.render_settings().width;
-  uint32_t height = scene.render_settings().height;
+  uint32_t width = scene_data.render.width;
+  uint32_t height = scene_data.render.height;
 
   // Initialize Metal
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -307,7 +306,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Output texture created: " << width << "x" << height << std::endl;
 
   // Convert scene to Metal format
-  MetalSceneData metalScene = convertToMetalScene(scene, width, height);
+  MetalSceneData metalScene = convertToMetalScene(scene_data, width, height);
   MetalRenderParams renderParams = {width, height, 1, 0};
 
   // Create buffers
