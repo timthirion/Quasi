@@ -97,7 +97,7 @@ jobs:
         fi
 
   test-macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     
     steps:
     - name: Checkout code
@@ -105,20 +105,33 @@ jobs:
       with:
         submodules: recursive
     
-    - name: Check available Xcode versions and configure environment
+    - name: Setup Xcode and Metal toolchain
       run: |
-        echo "Available Xcode versions:"
-        ls /Applications/ | grep Xcode || echo "No Xcode applications found"
-        echo "Current developer directory:"
-        xcode-select --print-path
-        echo "Current Xcode version:"
-        xcodebuild -version || echo "xcodebuild not available"
-        echo "Available SDKs:"
-        find /Applications -name "*.sdk" 2>/dev/null | head -10 || echo "No SDKs found via find"
-        echo "Checking xcrun:"
-        xcrun --show-sdk-path || echo "xcrun not working"
-        echo "Clang version:"
-        clang --version || echo "clang not available"
+        echo "Setting up Xcode environment for Metal compilation..."
+        
+        # List available Xcode versions
+        echo "Available Xcode installations:"
+        ls /Applications/ | grep -i xcode
+        
+        # Use the default Xcode installation
+        sudo xcode-select --reset
+        echo "Active developer directory: $(xcode-select --print-path)"
+        
+        # Verify Xcode version
+        xcodebuild -version
+        
+        # Download Metal toolchain (required for Metal shader compilation)
+        echo "Downloading Metal toolchain..."
+        xcodebuild -downloadComponent MetalToolchain || echo "Metal toolchain download failed, continuing..."
+        
+        # Verify Metal tools are available
+        echo "Checking Metal tools:"
+        xcrun --find metal || echo "Metal compiler not found"
+        xcrun --find metallib || echo "Metal library tool not found"
+        
+        # Show SDK information
+        echo "macOS SDK path: $(xcrun --show-sdk-path)"
+        echo "SDK version: $(xcrun --show-sdk-version)"
     
     - name: Configure git for HTTPS
       run: |
