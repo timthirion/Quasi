@@ -110,8 +110,9 @@ jobs:
       with:
         xcode-version: '16.0'
     
-    - name: Verify Xcode version
+    - name: Configure Xcode environment
       run: |
+        sudo xcode-select --switch /Applications/Xcode_16.app/Contents/Developer
         xcodebuild -version
         xcrun --show-sdk-version
         clang --version
