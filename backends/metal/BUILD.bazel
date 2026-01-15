@@ -6,6 +6,7 @@ objc_library(
     deps = [
         "//src/quasi/plugin:plugin_interface",
         "//src/quasi/gpu:types",
+        "//src/quasi/scene:cornell_box",
     ],
     sdk_frameworks = [
         "Metal",

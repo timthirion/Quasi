@@ -1,0 +1,55 @@
+"""Scene module - primitives and scene description"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "material",
+    hdrs = ["material.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = ["//src/quasi/math:vec"],
+)
+
+cc_library(
+    name = "sphere",
+    hdrs = ["sphere.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = ["//src/quasi/math"],
+)
+
+cc_library(
+    name = "camera",
+    hdrs = ["camera.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = ["//src/quasi/math"],
+)
+
+cc_library(
+    name = "quad",
+    hdrs = ["quad.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = ["//src/quasi/math"],
+)
+
+cc_library(
+    name = "scene",
+    hdrs = ["scene.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":camera",
+        ":material",
+        ":sphere",
+    ],
+)
+
+cc_library(
+    name = "cornell_box",
+    hdrs = ["cornell_box.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":camera",
+        ":material",
+        ":quad",
+    ],
+)

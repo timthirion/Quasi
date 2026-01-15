@@ -1,0 +1,28 @@
+"""Math module - vector and matrix types"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "vec",
+    hdrs = ["vec.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+)
+
+cc_library(
+    name = "ray",
+    hdrs = ["ray.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [":vec"],
+)
+
+cc_library(
+    name = "math",
+    hdrs = ["math.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":vec",
+        ":ray",
+    ],
+)

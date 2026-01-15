@@ -95,6 +95,7 @@ public:
 
 private:
     gpu_context gpu_ctx_{};
+    void* frame_semaphore_ = nullptr;  // dispatch_semaphore_t for triple buffering
     uint32_t width_ = 0;
     uint32_t height_ = 0;
 

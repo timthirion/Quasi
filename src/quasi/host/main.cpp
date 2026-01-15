@@ -58,8 +58,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Create window
-    auto window_result = Q::host::window::create("Quasi", 1280, 720);
+    // Create window (square for Cornell Box)
+    auto window_result = Q::host::window::create("Quasi", 720, 720);
     if (!window_result) {
         std::fprintf(stderr, "Failed to create window: %s\n",
                      Q::host::to_string(window_result.error()));
