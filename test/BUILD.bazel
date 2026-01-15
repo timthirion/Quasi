@@ -1,0 +1,22 @@
+"""Tests for Quasi"""
+
+cc_test(
+    name = "async_test",
+    size = "small",
+    srcs = ["async_test.cpp"],
+    deps = [
+        "//src/quasi/async",
+        "@catch2//:catch2_main",
+    ],
+)
+
+cc_test(
+    name = "plugin_test",
+    size = "small",
+    srcs = ["plugin_test.cpp"],
+    deps = [
+        "//src/quasi/plugin:plugin_interface",
+        "//src/quasi/plugin:dynamic_library",
+        "@catch2//:catch2_main",
+    ],
+)

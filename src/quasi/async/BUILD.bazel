@@ -1,0 +1,50 @@
+"""Async module - coroutines and cooperative scheduling"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "task",
+    hdrs = ["task.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+)
+
+cc_library(
+    name = "scheduler",
+    hdrs = ["scheduler.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [":task"],
+)
+
+cc_library(
+    name = "awaitables",
+    hdrs = ["awaitables.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":task",
+        ":scheduler",
+    ],
+)
+
+cc_library(
+    name = "file_watcher",
+    hdrs = ["file_watcher.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":task",
+        ":awaitables",
+    ],
+)
+
+cc_library(
+    name = "async",
+    hdrs = ["async.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":task",
+        ":scheduler",
+        ":awaitables",
+        ":file_watcher",
+    ],
+)

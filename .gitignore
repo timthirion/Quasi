@@ -1,3 +1,5 @@
+.claude/
+
 # Bazel
 bazel-*
 MODULE.bazel.lock

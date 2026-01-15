@@ -1,0 +1,29 @@
+# Quasi Bazel Configuration
+
+# Use C++23
+build --cxxopt=-std=c++23
+build --host_cxxopt=-std=c++23
+
+# Compiler warnings
+build --cxxopt=-Wall
+build --cxxopt=-Wextra
+build --cxxopt=-Wpedantic
+
+# Optimization levels
+build:opt --compilation_mode=opt
+build:dbg --compilation_mode=dbg
+
+# macOS-specific (Apple Clang has built-in coroutine support)
+build:macos --cxxopt=-stdlib=libc++
+build:macos --linkopt=-stdlib=libc++
+
+# Linux-specific (GCC needs -fcoroutines flag)
+build:linux --cxxopt=-pthread
+build:linux --linkopt=-pthread
+build:linux --cxxopt=-fcoroutines
+
+# Symbol visibility for shared libraries
+build --cxxopt=-fvisibility=hidden
+
+# Position independent code (required for shared libraries)
+build --cxxopt=-fPIC

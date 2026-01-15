@@ -1,0 +1,12 @@
+"""Quasi - Advanced Rendering System with Hot-Reloadable GPU Backends"""
+
+module(
+    name = "quasi",
+    version = "0.1.0",
+)
+
+# Platform detection
+bazel_dep(name = "platforms", version = "0.0.10")
+
+# Catch2 for unit testing
+bazel_dep(name = "catch2", version = "3.5.2")

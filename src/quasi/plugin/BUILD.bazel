@@ -1,0 +1,57 @@
+"""Plugin module - hot-reloadable plugin system"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "plugin_interface",
+    hdrs = ["plugin_interface.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+)
+
+cc_library(
+    name = "dynamic_library",
+    hdrs = ["dynamic_library.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    linkopts = select({
+        "@platforms//os:macos": [],
+        "@platforms//os:linux": ["-ldl"],
+        "//conditions:default": [],
+    }),
+    deps = ["//src/quasi:platform"],
+)
+
+cc_library(
+    name = "loader",
+    hdrs = ["loader.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":plugin_interface",
+        ":dynamic_library",
+    ],
+)
+
+cc_library(
+    name = "manager",
+    hdrs = ["manager.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":plugin_interface",
+        ":dynamic_library",
+        ":loader",
+        "//src/quasi/async",
+    ],
+)
+
+cc_library(
+    name = "plugin",
+    hdrs = ["plugin.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        ":plugin_interface",
+        ":dynamic_library",
+        ":loader",
+        ":manager",
+    ],
+)

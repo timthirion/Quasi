@@ -1,0 +1,10 @@
+"""Quasi library BUILD file"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Platform detection header
+cc_library(
+    name = "platform",
+    hdrs = ["platform.hpp"],
+    strip_include_prefix = "/src",
+)
