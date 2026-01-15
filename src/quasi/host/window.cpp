@@ -68,6 +68,9 @@ auto window::create(
     win.window_ = glfw_window;
     glfwSetWindowUserPointer(glfw_window, &win);
     glfwSetFramebufferSizeCallback(glfw_window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(glfw_window, mouse_button_callback_glfw);
+    glfwSetCursorPosCallback(glfw_window, cursor_pos_callback_glfw);
+    glfwSetScrollCallback(glfw_window, scroll_callback_glfw);
 
     return win;
 }
@@ -111,6 +114,14 @@ void window::set_resize_callback(resize_callback callback) {
     resize_callback_ = std::move(callback);
 }
 
+void window::set_mouse_button_callback(mouse_button_callback callback) {
+    mouse_button_callback_ = std::move(callback);
+}
+
+void window::set_cursor_pos_callback(cursor_pos_callback callback) {
+    cursor_pos_callback_ = std::move(callback);
+}
+
 void window::framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
     auto* self = static_cast<window*>(glfwGetWindowUserPointer(glfw_window));
     if (self && self->resize_callback_) {
@@ -118,6 +129,31 @@ void window::framebuffer_size_callback(GLFWwindow* glfw_window, int width, int h
             static_cast<uint32_t>(width),
             static_cast<uint32_t>(height)
         );
+    }
+}
+
+void window::mouse_button_callback_glfw(GLFWwindow* glfw_window, int button, int action, int mods) {
+    auto* self = static_cast<window*>(glfwGetWindowUserPointer(glfw_window));
+    if (self && self->mouse_button_callback_) {
+        self->mouse_button_callback_(button, action, mods);
+    }
+}
+
+void window::cursor_pos_callback_glfw(GLFWwindow* glfw_window, double x, double y) {
+    auto* self = static_cast<window*>(glfwGetWindowUserPointer(glfw_window));
+    if (self && self->cursor_pos_callback_) {
+        self->cursor_pos_callback_(x, y);
+    }
+}
+
+void window::set_scroll_callback(scroll_callback callback) {
+    scroll_callback_ = std::move(callback);
+}
+
+void window::scroll_callback_glfw(GLFWwindow* glfw_window, double x_offset, double y_offset) {
+    auto* self = static_cast<window*>(glfwGetWindowUserPointer(glfw_window));
+    if (self && self->scroll_callback_) {
+        self->scroll_callback_(x_offset, y_offset);
     }
 }
 

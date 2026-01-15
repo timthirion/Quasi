@@ -41,6 +41,15 @@ public:
     /// @brief Callback type for resize events.
     using resize_callback = std::function<void(uint32_t width, uint32_t height)>;
 
+    /// @brief Callback type for mouse button events.
+    using mouse_button_callback = std::function<void(int button, int action, int mods)>;
+
+    /// @brief Callback type for cursor position events.
+    using cursor_pos_callback = std::function<void(double x, double y)>;
+
+    /// @brief Callback type for scroll events.
+    using scroll_callback = std::function<void(double x_offset, double y_offset)>;
+
     /// @brief Creates a new window.
     /// @param title Window title.
     /// @param width Initial width in screen coordinates.
@@ -85,6 +94,15 @@ public:
     /// @brief Sets a callback for resize events.
     void set_resize_callback(resize_callback callback);
 
+    /// @brief Sets a callback for mouse button events.
+    void set_mouse_button_callback(mouse_button_callback callback);
+
+    /// @brief Sets a callback for cursor position events.
+    void set_cursor_pos_callback(cursor_pos_callback callback);
+
+    /// @brief Sets a callback for scroll events.
+    void set_scroll_callback(scroll_callback callback);
+
     /// @brief Checks if the window is valid.
     [[nodiscard]] bool is_valid() const noexcept { return window_ != nullptr; }
 
@@ -94,8 +112,14 @@ public:
 private:
     GLFWwindow* window_ = nullptr;
     resize_callback resize_callback_;
+    mouse_button_callback mouse_button_callback_;
+    cursor_pos_callback cursor_pos_callback_;
+    scroll_callback scroll_callback_;
 
     static void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
+    static void mouse_button_callback_glfw(GLFWwindow* glfw_window, int button, int action, int mods);
+    static void cursor_pos_callback_glfw(GLFWwindow* glfw_window, double x, double y);
+    static void scroll_callback_glfw(GLFWwindow* glfw_window, double x_offset, double y_offset);
 };
 
 }  // namespace Q::host

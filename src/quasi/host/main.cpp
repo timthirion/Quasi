@@ -10,6 +10,7 @@
 #include "tools/cpp/runfiles/runfiles.h"
 
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -29,6 +30,88 @@ void plugin_request_shutdown(void* host_data) {
         window->close();
     }
 }
+
+/// @brief Simple orbit camera controller.
+struct orbit_camera {
+    float target[3] = {0.0f, 1.0f, 0.0f};  // Look-at target (center of Cornell Box).
+    float distance  = 3.5f;                 // Distance from target.
+    float azimuth   = 0.0f;                 // Horizontal angle (radians).
+    float elevation = 0.0f;                 // Vertical angle (radians).
+    float fov       = 40.0f;                // Field of view in degrees.
+
+    // Computed position.
+    float position[3] = {0.0f, 1.0f, 3.5f};
+
+    // Input state.
+    bool dragging = false;
+    double last_x = 0.0;
+    double last_y = 0.0;
+    bool dirty = true;  // True if camera changed this frame.
+
+    void update_position() {
+        // Clamp elevation to avoid gimbal lock.
+        constexpr float max_elev = 1.5f;  // ~86 degrees
+        if (elevation > max_elev) elevation = max_elev;
+        if (elevation < -max_elev) elevation = -max_elev;
+
+        // Spherical to Cartesian.
+        float cos_elev = std::cos(elevation);
+        position[0] = target[0] + distance * std::sin(azimuth) * cos_elev;
+        position[1] = target[1] + distance * std::sin(elevation);
+        position[2] = target[2] + distance * std::cos(azimuth) * cos_elev;
+    }
+
+    void on_mouse_button(int button, int action, int /*mods*/) {
+        if (button == 0) {  // Left button.
+            dragging = (action == 1);  // GLFW_PRESS = 1
+        }
+    }
+
+    void on_cursor_pos(double x, double y) {
+        if (dragging) {
+            double dx = x - last_x;
+            double dy = y - last_y;
+
+            // Sensitivity.
+            constexpr float sens = 0.005f;
+            azimuth -= static_cast<float>(dx) * sens;
+            elevation += static_cast<float>(dy) * sens;
+
+            update_position();
+            dirty = true;
+        }
+        last_x = x;
+        last_y = y;
+    }
+
+    void on_scroll(double /*x_offset*/, double y_offset) {
+        // Zoom in/out by adjusting distance.
+        constexpr float zoom_sens = 0.15f;
+        distance -= static_cast<float>(y_offset) * zoom_sens;
+
+        // Clamp distance to reasonable bounds.
+        constexpr float min_dist = 1.0f;
+        constexpr float max_dist = 10.0f;
+        if (distance < min_dist) distance = min_dist;
+        if (distance > max_dist) distance = max_dist;
+
+        update_position();
+        dirty = true;
+    }
+
+    void fill_camera(Q_camera& cam) const {
+        cam.position[0] = position[0];
+        cam.position[1] = position[1];
+        cam.position[2] = position[2];
+        cam.target[0] = target[0];
+        cam.target[1] = target[1];
+        cam.target[2] = target[2];
+        cam.up[0] = 0.0f;
+        cam.up[1] = 1.0f;
+        cam.up[2] = 0.0f;
+        cam.fov = fov;
+    }
+};
 
 }  // namespace
 
@@ -58,8 +141,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Create window
-    auto window_result = Q::host::window::create("Quasi", 1280, 720);
+    // Create window (square for Cornell Box)
+    auto window_result = Q::host::window::create("Quasi", 720, 720);
     if (!window_result) {
         std::fprintf(stderr, "Failed to create window: %s\n",
                      Q::host::to_string(window_result.error()));
@@ -79,6 +162,21 @@ int main(int argc, char* argv[]) {
     // Handle window resize
     window.set_resize_callback([&metal](uint32_t width, uint32_t height) {
         metal.resize(width, height);
+    });
+
+    // Set up orbit camera.
+    orbit_camera camera;
+    camera.update_position();
+
+    // Mouse input callbacks.
+    window.set_mouse_button_callback([&camera](int button, int action, int mods) {
+        camera.on_mouse_button(button, action, mods);
+    });
+    window.set_cursor_pos_callback([&camera](double x, double y) {
+        camera.on_cursor_pos(x, y);
+    });
+    window.set_scroll_callback([&camera](double x_offset, double y_offset) {
+        camera.on_scroll(x_offset, y_offset);
     });
 
     // Load the plugin
@@ -134,6 +232,11 @@ int main(int argc, char* argv[]) {
         auto frame_result = metal.begin_frame();
         if (frame_result) {
             auto& frame = *frame_result;
+
+            // Fill in camera data from orbit controller.
+            camera.fill_camera(frame.camera);
+            frame.camera_dirty = camera.dirty ? 1 : 0;
+            camera.dirty = false;
 
             // Render plugin
             plugin.render(&frame);

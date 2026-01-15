@@ -100,7 +100,9 @@ public:
         , watcher_{library_path_}
         , hooks_{std::move(hooks)} {}
 
-    ~manager() = default;
+    ~manager() {
+        cleanup_temp_file();
+    }
 
     manager(const manager&) = delete;
     manager& operator=(const manager&) = delete;
@@ -266,6 +268,9 @@ private:
     }
 
     result<void> do_load() {
+        // Clean up previous temp file before creating a new one.
+        cleanup_temp_file();
+
         auto temp_path = make_temp_library_path();
 
         try {
@@ -281,6 +286,9 @@ private:
             std::cerr << "[plugin::manager] Copy failed: " << e.what() << "\n";
             return std::unexpected{error::load_failed};
         }
+
+        // Track this temp file for cleanup.
+        temp_path_ = temp_path;
 
         auto lib_result = dynamic_library::open(temp_path);
         if (!lib_result) {
@@ -331,6 +339,14 @@ private:
         return temp_dir / unique_name;
     }
 
+    void cleanup_temp_file() {
+        if (!temp_path_.empty()) {
+            std::error_code ec;
+            std::filesystem::remove(temp_path_, ec);
+            // Ignore errors - file may already be gone.
+        }
+    }
+
     void unload_current() {
         if (plugin_) {
             std::cout << "[plugin::manager] Destroying plugin...\n";
@@ -344,6 +360,7 @@ private:
     }
 
     path_type               library_path_;
+    path_type               temp_path_;
     dynamic_library         library_;
     async::file_watcher     watcher_;
     reload_hooks            hooks_;

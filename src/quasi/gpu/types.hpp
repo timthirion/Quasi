@@ -41,6 +41,14 @@ struct Q_gpu_context {
     void* layer;            ///< Swapchain/layer (CAMetalLayer, VkSwapchain, etc.)
 };
 
+/// @brief Camera data for host-controlled camera.
+struct Q_camera {
+    float position[3];      ///< Camera position in world space.
+    float target[3];        ///< Look-at target point.
+    float up[3];            ///< Up vector.
+    float fov;              ///< Vertical field of view in degrees.
+};
+
 /// @brief Per-frame render data passed to plugin render functions.
 ///
 /// Contains resources valid only for the current frame.
@@ -57,6 +65,8 @@ struct Q_render_frame {
     void* command_buffer;   ///< Command buffer for this frame.
     uint32_t width;         ///< Drawable width in pixels.
     uint32_t height;        ///< Drawable height in pixels.
+    Q_camera camera;        ///< Camera parameters from host.
+    uint32_t camera_dirty;  ///< Non-zero if camera changed this frame.
 };
 
 }  // extern "C"
@@ -67,6 +77,7 @@ namespace Q::gpu {
 /// @{
 using gpu_backend   = Q_gpu_backend;
 using gpu_context   = Q_gpu_context;
+using camera_data   = Q_camera;
 using render_frame  = Q_render_frame;
 /// @}
 
