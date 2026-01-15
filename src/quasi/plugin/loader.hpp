@@ -51,7 +51,7 @@ public:
     using create_fn      = plugin_handle* (*)(plugin_context*);
     using destroy_fn     = void (*)(plugin_handle*);
     using update_fn      = void (*)(plugin_handle*, float);
-    using render_fn      = void (*)(plugin_handle*);
+    using render_fn      = void (*)(plugin_handle*, Q::gpu::render_frame*);
     /// @}
 
     /// @brief Loads a plugin from a dynamic library.
@@ -158,9 +158,10 @@ public:
     }
 
     /// @brief Calls the plugin's render function.
-    void render() {
+    /// @param frame Per-frame render data (drawable, command buffer, etc.)
+    void render(Q::gpu::render_frame* frame) {
         if (handle_ && fn_render_) {
-            fn_render_(handle_);
+            fn_render_(handle_, frame);
         }
     }
 

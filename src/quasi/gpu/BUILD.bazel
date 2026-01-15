@@ -1,0 +1,18 @@
+"""GPU module - GPU context abstractions"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "types",
+    hdrs = ["types.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+)
+
+cc_library(
+    name = "gpu",
+    hdrs = ["gpu.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [":types"],
+)

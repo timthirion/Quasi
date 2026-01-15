@@ -1,0 +1,33 @@
+"""Metal GPU backend"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+# Header-only target for the C++ API
+cc_library(
+    name = "context_hdrs",
+    hdrs = ["context.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = ["//src/quasi/gpu:types"],
+)
+
+# Objective-C++ implementation
+objc_library(
+    name = "context_impl",
+    srcs = ["context.mm"],
+    hdrs = ["context.hpp"],
+    includes = ["../../.."],  # For quasi/gpu/metal/context.hpp
+    deps = ["//src/quasi/gpu:types"],
+    sdk_frameworks = [
+        "Metal",
+        "QuartzCore",
+        "AppKit",
+    ],
+)
+
+# Combined target that provides the full library
+alias(
+    name = "context",
+    actual = ":context_impl",
+)

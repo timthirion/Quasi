@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <quasi/gpu/types.hpp>
+
 #include <cstddef>
 #include <cstdint>
 
@@ -42,11 +44,12 @@ struct Q_plugin_info {
 /// @brief Host-provided context passed to plugins.
 ///
 /// Plugins receive this during creation and can use it to communicate
-/// back to the host through callbacks.
+/// back to the host through callbacks and access GPU resources.
 struct Q_plugin_context {
     uint32_t viewport_width;   ///< Current viewport width in pixels.
     uint32_t viewport_height;  ///< Current viewport height in pixels.
     void* host_data;           ///< Opaque pointer to host-specific data.
+    Q_gpu_context* gpu;        ///< GPU device context (Metal, Vulkan, etc.)
 
     /// @brief Callback for plugin logging.
     void (*log)(void* host_data, const char* message);
@@ -90,7 +93,8 @@ void Q_plugin_update(Q_plugin_handle* handle, float delta_time);
 
 /// @brief Called each frame to render.
 /// @param handle The plugin handle.
-void Q_plugin_render(Q_plugin_handle* handle);
+/// @param frame Per-frame render data (drawable, command buffer, etc.)
+void Q_plugin_render(Q_plugin_handle* handle, Q_render_frame* frame);
 
 /// @}
 

@@ -10,3 +10,6 @@ bazel_dep(name = "platforms", version = "0.0.10")
 
 # Catch2 for unit testing
 bazel_dep(name = "catch2", version = "3.5.2")
+
+# GLFW for windowing
+bazel_dep(name = "glfw", version = "3.4.0.bcr.1")

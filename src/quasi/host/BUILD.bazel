@@ -1,0 +1,28 @@
+"""Host module - window and application"""
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "window",
+    srcs = ["window.cpp"],
+    hdrs = ["window.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = ["@glfw"],
+    linkopts = [
+        "-framework", "Cocoa",
+    ],
+)
+
+cc_binary(
+    name = "quasi",
+    srcs = ["main.cpp"],
+    data = ["//backends/metal:libquasi_metal.dylib"],
+    deps = [
+        ":window",
+        "//src/quasi/gpu/metal:context",
+        "//src/quasi/plugin",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)

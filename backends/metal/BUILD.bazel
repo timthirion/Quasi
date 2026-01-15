@@ -1,0 +1,22 @@
+"""Metal backend - GPU rendering via Apple Metal"""
+
+objc_library(
+    name = "backend_impl",
+    srcs = ["plugin.mm"],
+    deps = [
+        "//src/quasi/plugin:plugin_interface",
+        "//src/quasi/gpu:types",
+    ],
+    sdk_frameworks = [
+        "Metal",
+        "QuartzCore",
+    ],
+    alwayslink = True,
+)
+
+cc_binary(
+    name = "libquasi_metal.dylib",
+    deps = [":backend_impl"],
+    linkshared = True,
+    visibility = ["//visibility:public"],
+)

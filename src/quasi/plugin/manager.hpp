@@ -121,7 +121,7 @@ public:
         std::cout << "[plugin::manager] Watching: " << library_path_ << "\n";
 
         while (true) {
-            co_await async::yield();
+            co_await async::wait_ms(100);  // Throttle filesystem polling
 
             if (!watcher_.has_changed()) {
                 continue;
@@ -147,9 +147,10 @@ public:
     }
 
     /// @brief Calls the plugin's render function.
-    void render() {
+    /// @param frame Per-frame render data (drawable, command buffer, etc.)
+    void render(Q::gpu::render_frame* frame) {
         if (plugin_) {
-            plugin_->render();
+            plugin_->render(frame);
         }
     }
 
@@ -165,6 +166,12 @@ public:
     /// @param data Pointer to host-specific data.
     void set_host_data(void* data) {
         context_.host_data = data;
+    }
+
+    /// @brief Sets the GPU context in the plugin context.
+    /// @param gpu GPU context pointer.
+    void set_gpu_context(Q::gpu::gpu_context* gpu) {
+        context_.gpu = gpu;
     }
 
     /// @brief Sets the logging callback in the plugin context.

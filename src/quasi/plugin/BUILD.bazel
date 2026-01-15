@@ -8,6 +8,7 @@ cc_library(
     name = "plugin_interface",
     hdrs = ["plugin_interface.hpp"],
     strip_include_prefix = _STRIP_PREFIX,
+    deps = ["//src/quasi/gpu:types"],
 )
 
 cc_library(
