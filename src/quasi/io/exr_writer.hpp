@@ -37,6 +37,15 @@ enum class exr_error {
     const Q_readback_result& result
 );
 
+/// @brief Writes all AOV buffers to a multi-layer EXR file.
+/// @param path Output file path.
+/// @param result The AOV readback data to write.
+/// @return Success, or an error.
+[[nodiscard]] std::expected<void, exr_error> write_exr(
+    const std::filesystem::path& path,
+    const Q_readback_aov_result& result
+);
+
 /// @brief Generates a timestamped filename like "quasi_20260326_153042.exr".
 [[nodiscard]] std::filesystem::path make_timestamped_path(
     const std::filesystem::path& directory = "."

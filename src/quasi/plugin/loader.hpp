@@ -52,8 +52,10 @@ public:
     using destroy_fn       = void (*)(plugin_handle*);
     using update_fn        = void (*)(plugin_handle*, float);
     using render_fn        = void (*)(plugin_handle*, Q::gpu::render_frame*);
-    using readback_fn      = readback_result (*)(plugin_handle*);
-    using readback_free_fn = void (*)(readback_result*);
+    using readback_fn          = readback_result (*)(plugin_handle*);
+    using readback_free_fn     = void (*)(readback_result*);
+    using readback_aov_fn      = readback_aov_result (*)(plugin_handle*);
+    using readback_aov_free_fn = void (*)(readback_aov_result*);
     /// @}
 
     /// @brief Loads a plugin from a dynamic library.
@@ -117,6 +119,14 @@ public:
             p.fn_readback_free_ = *sym;
         }
 
+        // Resolve optional AOV symbols (ABI v3+).
+        if (auto sym = library.get_symbol<readback_aov_fn>(k_symbol_readback_aov)) {
+            p.fn_readback_aov_ = *sym;
+        }
+        if (auto sym = library.get_symbol<readback_aov_free_fn>(k_symbol_readback_aov_free)) {
+            p.fn_readback_aov_free_ = *sym;
+        }
+
         // Create the plugin instance
         p.handle_ = p.fn_create_(context);
         if (!p.handle_) {
@@ -142,6 +152,8 @@ public:
         , fn_render_{std::exchange(other.fn_render_, nullptr)}
         , fn_readback_{std::exchange(other.fn_readback_, nullptr)}
         , fn_readback_free_{std::exchange(other.fn_readback_free_, nullptr)}
+        , fn_readback_aov_{std::exchange(other.fn_readback_aov_, nullptr)}
+        , fn_readback_aov_free_{std::exchange(other.fn_readback_aov_free_, nullptr)}
     {}
 
     loader& operator=(loader&& other) noexcept {
@@ -156,6 +168,8 @@ public:
             fn_render_ = std::exchange(other.fn_render_, nullptr);
             fn_readback_ = std::exchange(other.fn_readback_, nullptr);
             fn_readback_free_ = std::exchange(other.fn_readback_free_, nullptr);
+            fn_readback_aov_ = std::exchange(other.fn_readback_aov_, nullptr);
+            fn_readback_aov_free_ = std::exchange(other.fn_readback_aov_free_, nullptr);
         }
         return *this;
     }
@@ -196,6 +210,26 @@ public:
     void readback_free(readback_result* result) {
         if (fn_readback_free_ && result) {
             fn_readback_free_(result);
+        }
+    }
+
+    /// @brief Returns true if the plugin supports AOV readback.
+    [[nodiscard]] bool supports_readback_aov() const noexcept {
+        return fn_readback_aov_ != nullptr && fn_readback_aov_free_ != nullptr;
+    }
+
+    /// @brief Reads back all AOV buffers.
+    [[nodiscard]] readback_aov_result readback_aov() {
+        if (handle_ && fn_readback_aov_) {
+            return fn_readback_aov_(handle_);
+        }
+        return readback_aov_result{};
+    }
+
+    /// @brief Frees AOV readback memory.
+    void readback_aov_free(readback_aov_result* result) {
+        if (fn_readback_aov_free_ && result) {
+            fn_readback_aov_free_(result);
         }
     }
 
@@ -242,8 +276,10 @@ private:
     destroy_fn       fn_destroy_       = nullptr;
     update_fn        fn_update_        = nullptr;
     render_fn        fn_render_        = nullptr;
-    readback_fn      fn_readback_      = nullptr;
-    readback_free_fn fn_readback_free_ = nullptr;
+    readback_fn          fn_readback_          = nullptr;
+    readback_free_fn     fn_readback_free_     = nullptr;
+    readback_aov_fn      fn_readback_aov_      = nullptr;
+    readback_aov_free_fn fn_readback_aov_free_ = nullptr;
 };
 
 /// @brief Converts a loader error to a human-readable string.

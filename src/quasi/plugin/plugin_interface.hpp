@@ -69,6 +69,28 @@ struct Q_readback_result {
     uint32_t channels;  ///< Number of channels (always 4 for RGBA).
 };
 
+/// @brief Identifies an AOV buffer type.
+enum Q_aov_type : uint32_t {
+    Q_AOV_BEAUTY = 0,  ///< Path-traced beauty (accumulated).
+    Q_AOV_ALBEDO = 1,  ///< First-hit surface albedo.
+    Q_AOV_NORMAL = 2,  ///< First-hit world-space normal.
+    Q_AOV_DEPTH  = 3,  ///< First-hit ray distance.
+    Q_AOV_COUNT  = 4,  ///< Number of AOV types.
+};
+
+/// @brief Single AOV buffer from readback.
+struct Q_aov_buffer {
+    float*   data;      ///< Pixel data (RGBA float, row-major). nullptr if unavailable.
+    uint32_t width;     ///< Image width in pixels.
+    uint32_t height;    ///< Image height in pixels.
+    uint32_t channels;  ///< Number of channels (always 4 for RGBA).
+};
+
+/// @brief Result of reading back all AOV buffers.
+struct Q_readback_aov_result {
+    Q_aov_buffer buffers[Q_AOV_COUNT];  ///< Indexed by Q_aov_type.
+};
+
 /// @name Plugin C API
 /// @brief Functions that plugins must implement with extern "C" linkage.
 ///
@@ -116,6 +138,15 @@ Q_readback_result Q_plugin_readback(Q_plugin_handle* handle);
 /// @param result The readback result to free.
 void Q_plugin_readback_free(Q_readback_result* result);
 
+/// @brief Reads back all AOV buffers (beauty + albedo + normal + depth).
+/// @param handle The plugin handle.
+/// @return AOV readback result. Buffers with data == nullptr are unavailable.
+Q_readback_aov_result Q_plugin_readback_aov(Q_plugin_handle* handle);
+
+/// @brief Frees memory allocated by Q_plugin_readback_aov().
+/// @param result The AOV readback result to free.
+void Q_plugin_readback_aov_free(Q_readback_aov_result* result);
+
 /// @}
 
 }  // extern "C"
@@ -128,23 +159,28 @@ using plugin_handle  = Q_plugin_handle;
 using plugin_version = Q_plugin_version;
 using plugin_info    = Q_plugin_info;
 using plugin_context = Q_plugin_context;
-using readback_result = Q_readback_result;
+using readback_result     = Q_readback_result;
+using aov_type            = Q_aov_type;
+using aov_buffer          = Q_aov_buffer;
+using readback_aov_result = Q_readback_aov_result;
 /// @}
 
 /// @brief Symbol names for dlsym() lookup.
 /// @{
-inline constexpr const char* k_symbol_abi_version   = "Q_plugin_abi_version";
-inline constexpr const char* k_symbol_get_info      = "Q_plugin_get_info";
-inline constexpr const char* k_symbol_create        = "Q_plugin_create";
-inline constexpr const char* k_symbol_destroy       = "Q_plugin_destroy";
-inline constexpr const char* k_symbol_update        = "Q_plugin_update";
-inline constexpr const char* k_symbol_render        = "Q_plugin_render";
-inline constexpr const char* k_symbol_readback      = "Q_plugin_readback";
-inline constexpr const char* k_symbol_readback_free = "Q_plugin_readback_free";
+inline constexpr const char* k_symbol_abi_version       = "Q_plugin_abi_version";
+inline constexpr const char* k_symbol_get_info          = "Q_plugin_get_info";
+inline constexpr const char* k_symbol_create            = "Q_plugin_create";
+inline constexpr const char* k_symbol_destroy           = "Q_plugin_destroy";
+inline constexpr const char* k_symbol_update            = "Q_plugin_update";
+inline constexpr const char* k_symbol_render            = "Q_plugin_render";
+inline constexpr const char* k_symbol_readback          = "Q_plugin_readback";
+inline constexpr const char* k_symbol_readback_free     = "Q_plugin_readback_free";
+inline constexpr const char* k_symbol_readback_aov      = "Q_plugin_readback_aov";
+inline constexpr const char* k_symbol_readback_aov_free = "Q_plugin_readback_aov_free";
 /// @}
 
 /// @brief Current ABI version. Increment when the interface changes.
-inline constexpr uint32_t k_plugin_abi_version = 2;
+inline constexpr uint32_t k_plugin_abi_version = 3;
 
 /// @brief Equality comparison for plugin versions.
 [[nodiscard]] constexpr bool operator==(plugin_version a, plugin_version b) noexcept {

@@ -277,7 +277,24 @@ int main(int argc, char* argv[]) {
             if (save_requested) {
                 save_requested = false;
 
-                if (plugin.supports_readback()) {
+                if (plugin.supports_readback_aov()) {
+                    std::printf("[Host] Saving EXR with AOVs (%d samples)...\n", frames_rendered);
+
+                    auto rb = plugin.readback_aov();
+                    if (rb.buffers[Q_AOV_BEAUTY].data) {
+                        auto path = Q::io::make_timestamped_path(".");
+                        auto write_result = Q::io::write_exr(path, rb);
+                        if (write_result) {
+                            std::printf("[Host] Saved: %s\n", path.c_str());
+                        } else {
+                            std::fprintf(stderr, "[Host] EXR write failed: %s\n",
+                                         Q::io::to_string(write_result.error()));
+                        }
+                        plugin.readback_aov_free(&rb);
+                    } else {
+                        std::fprintf(stderr, "[Host] AOV readback returned no data\n");
+                    }
+                } else if (plugin.supports_readback()) {
                     std::printf("[Host] Saving EXR (%d samples)...\n", frames_rendered);
 
                     auto rb = plugin.readback();

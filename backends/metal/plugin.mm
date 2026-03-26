@@ -213,8 +213,20 @@ HitRecord trace_scene(Ray ray, constant SceneUniforms& scene) {
 
 // ----- Path Tracing -----
 
-float3 path_trace(Ray ray, constant SceneUniforms& scene, thread uint& rng) {
-    float3 color = float3(0.0f);
+struct PathTraceResult {
+    float3 color;
+    float3 first_hit_albedo;
+    float3 first_hit_normal;
+    float  first_hit_depth;
+};
+
+PathTraceResult path_trace(Ray ray, constant SceneUniforms& scene, thread uint& rng) {
+    PathTraceResult result;
+    result.color = float3(0.0f);
+    result.first_hit_albedo = float3(0.0f);
+    result.first_hit_normal = float3(0.0f);
+    result.first_hit_depth = 0.0f;
+
     float3 throughput = float3(1.0f);
 
     for (int bounce = 0; bounce < MAX_BOUNCES; bounce++) {
@@ -226,8 +238,18 @@ float3 path_trace(Ray ray, constant SceneUniforms& scene, thread uint& rng) {
 
         Material mat = scene.materials[hit.material_index];
 
+        // Capture AOV data on first hit.
+        if (bounce == 0) {
+            float emit_str = max(mat.emission.x, max(mat.emission.y, mat.emission.z));
+            result.first_hit_albedo = (emit_str > 0.1f)
+                ? float3(mat.emission)  // Use emission for light sources.
+                : float3(mat.albedo);
+            result.first_hit_normal = hit.normal * 0.5f + 0.5f;  // Remap [-1,1] to [0,1].
+            result.first_hit_depth  = hit.t;
+        }
+
         // Add emission.
-        color += throughput * float3(mat.emission);
+        result.color += throughput * float3(mat.emission);
 
         // Stop if we hit a light.
         float emit_strength = max(mat.emission.x, max(mat.emission.y, mat.emission.z));
@@ -250,12 +272,19 @@ float3 path_trace(Ray ray, constant SceneUniforms& scene, thread uint& rng) {
         ray.direction = cosine_sample_hemisphere(hit.normal, rng);
     }
 
-    return color;
+    return result;
 }
 
 // ----- Main Fragment Shader -----
 
-fragment float4 pathtrace_frag(
+struct FragmentOutput {
+    float4 beauty  [[color(0)]];
+    float4 albedo  [[color(1)]];
+    float4 normal  [[color(2)]];
+    float4 depth   [[color(3)]];
+};
+
+fragment FragmentOutput pathtrace_frag(
     VertexOut in [[stage_in]],
     constant SceneUniforms& scene [[buffer(0)]]
 ) {
@@ -266,9 +295,17 @@ fragment float4 pathtrace_frag(
     uint rng = pcg_hash(pixel.x + pixel.y * 1920u + scene.frame_count * 1920u * 1080u);
 
     Ray ray = get_camera_ray(scene.camera, uv, rng);
-    float3 color = path_trace(ray, scene, rng);
+    PathTraceResult pt = path_trace(ray, scene, rng);
 
-    return float4(color, 1.0f);
+    // Normalize depth to [0,1] for visualization (near=1, far=5).
+    float norm_depth = clamp((pt.first_hit_depth - 1.0f) / 4.0f, 0.0f, 1.0f);
+
+    FragmentOutput out;
+    out.beauty = float4(pt.color, 1.0f);
+    out.albedo = float4(pt.first_hit_albedo, 1.0f);
+    out.normal = float4(pt.first_hit_normal, 1.0f);
+    out.depth  = float4(norm_depth, norm_depth, norm_depth, 1.0f);
+    return out;
 }
 
 // ----- Accumulation Compute Shader -----
@@ -360,6 +397,19 @@ struct plugin_state {
     id<MTLTexture> accum_a = nil;
     id<MTLTexture> accum_b = nil;
 
+    // AOV render targets (single-sample output from MRT).
+    id<MTLTexture> aov_albedo_rt = nil;
+    id<MTLTexture> aov_normal_rt = nil;
+    id<MTLTexture> aov_depth_rt  = nil;
+
+    // AOV accumulation ping-pong buffers.
+    id<MTLTexture> aov_albedo_accum_a = nil;
+    id<MTLTexture> aov_albedo_accum_b = nil;
+    id<MTLTexture> aov_normal_accum_a = nil;
+    id<MTLTexture> aov_normal_accum_b = nil;
+    id<MTLTexture> aov_depth_accum_a  = nil;
+    id<MTLTexture> aov_depth_accum_b  = nil;
+
     Q::scene::cornell_box_scene scene;
     uint32_t frame_count = 0;
     uint32_t last_width = 0;
@@ -398,11 +448,14 @@ bool create_pipelines(plugin_state* state, MTLPixelFormat output_format) {
         return false;
     }
 
-    // Path trace pipeline (renders to HDR texture).
+    // Path trace pipeline (renders to HDR textures via MRT).
     MTLRenderPipelineDescriptor* pt_desc = [[MTLRenderPipelineDescriptor alloc] init];
     pt_desc.vertexFunction = fullscreen_vert;
     pt_desc.fragmentFunction = pathtrace_frag;
-    pt_desc.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA32Float;
+    pt_desc.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA32Float;  // beauty
+    pt_desc.colorAttachments[1].pixelFormat = MTLPixelFormatRGBA32Float;  // albedo
+    pt_desc.colorAttachments[2].pixelFormat = MTLPixelFormatRGBA32Float;  // normal
+    pt_desc.colorAttachments[3].pixelFormat = MTLPixelFormatRGBA32Float;  // depth
 
     state->pathtrace_pipeline = [state->device newRenderPipelineStateWithDescriptor:pt_desc
                                                                               error:&error];
@@ -440,21 +493,40 @@ void create_textures(plugin_state* state, uint32_t width, uint32_t height) {
     state->render_target = nil;
     state->accum_a = nil;
     state->accum_b = nil;
+    state->aov_albedo_rt = nil;
+    state->aov_normal_rt = nil;
+    state->aov_depth_rt  = nil;
+    state->aov_albedo_accum_a = nil;
+    state->aov_albedo_accum_b = nil;
+    state->aov_normal_accum_a = nil;
+    state->aov_normal_accum_b = nil;
+    state->aov_depth_accum_a  = nil;
+    state->aov_depth_accum_b  = nil;
 
-    MTLTextureDescriptor* hdr_desc = [MTLTextureDescriptor
+    // Render target descriptor (RenderTarget + ShaderRead).
+    MTLTextureDescriptor* rt_desc = [MTLTextureDescriptor
         texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA32Float
                                      width:width
                                     height:height
                                  mipmapped:NO];
-    hdr_desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-    hdr_desc.storageMode = MTLStorageModePrivate;
+    rt_desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+    rt_desc.storageMode = MTLStorageModePrivate;
 
-    state->render_target = [state->device newTextureWithDescriptor:hdr_desc];
+    state->render_target = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_albedo_rt = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_normal_rt = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_depth_rt  = [state->device newTextureWithDescriptor:rt_desc];
 
-    // Accumulation buffers need read/write.
-    hdr_desc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
-    state->accum_a = [state->device newTextureWithDescriptor:hdr_desc];
-    state->accum_b = [state->device newTextureWithDescriptor:hdr_desc];
+    // Accumulation descriptor (ShaderRead + ShaderWrite for compute).
+    rt_desc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+    state->accum_a = [state->device newTextureWithDescriptor:rt_desc];
+    state->accum_b = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_albedo_accum_a = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_albedo_accum_b = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_normal_accum_a = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_normal_accum_b = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_depth_accum_a  = [state->device newTextureWithDescriptor:rt_desc];
+    state->aov_depth_accum_b  = [state->device newTextureWithDescriptor:rt_desc];
 
     state->last_width = width;
     state->last_height = height;
@@ -531,6 +603,15 @@ Q_EXPORT void Q_plugin_destroy(Q_plugin_handle* handle) {
     state->render_target = nil;
     state->accum_a = nil;
     state->accum_b = nil;
+    state->aov_albedo_rt = nil;
+    state->aov_normal_rt = nil;
+    state->aov_depth_rt  = nil;
+    state->aov_albedo_accum_a = nil;
+    state->aov_albedo_accum_b = nil;
+    state->aov_normal_accum_a = nil;
+    state->aov_normal_accum_b = nil;
+    state->aov_depth_accum_a  = nil;
+    state->aov_depth_accum_b  = nil;
 
     delete state;
 }
@@ -622,12 +703,32 @@ Q_EXPORT void Q_plugin_render(Q_plugin_handle* handle, Q_render_frame* frame) {
     id<MTLTexture> read_accum = state->ping ? state->accum_a : state->accum_b;
     id<MTLTexture> write_accum = state->ping ? state->accum_b : state->accum_a;
 
-    // 1. Path trace pass - render new sample.
+    // Select AOV accumulation buffers (same ping-pong as beauty).
+    id<MTLTexture> albedo_read  = state->ping ? state->aov_albedo_accum_a : state->aov_albedo_accum_b;
+    id<MTLTexture> albedo_write = state->ping ? state->aov_albedo_accum_b : state->aov_albedo_accum_a;
+    id<MTLTexture> normal_read  = state->ping ? state->aov_normal_accum_a : state->aov_normal_accum_b;
+    id<MTLTexture> normal_write = state->ping ? state->aov_normal_accum_b : state->aov_normal_accum_a;
+    id<MTLTexture> depth_read   = state->ping ? state->aov_depth_accum_a  : state->aov_depth_accum_b;
+    id<MTLTexture> depth_write  = state->ping ? state->aov_depth_accum_b  : state->aov_depth_accum_a;
+
+    // 1. Path trace pass - render new sample (MRT: beauty + AOVs).
     {
         MTLRenderPassDescriptor* pass = [MTLRenderPassDescriptor renderPassDescriptor];
-        pass.colorAttachments[0].texture = state->render_target;
-        pass.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+        pass.colorAttachments[0].texture     = state->render_target;
+        pass.colorAttachments[0].loadAction  = MTLLoadActionDontCare;
         pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+
+        pass.colorAttachments[1].texture     = state->aov_albedo_rt;
+        pass.colorAttachments[1].loadAction  = MTLLoadActionDontCare;
+        pass.colorAttachments[1].storeAction = MTLStoreActionStore;
+
+        pass.colorAttachments[2].texture     = state->aov_normal_rt;
+        pass.colorAttachments[2].loadAction  = MTLLoadActionDontCare;
+        pass.colorAttachments[2].storeAction = MTLStoreActionStore;
+
+        pass.colorAttachments[3].texture     = state->aov_depth_rt;
+        pass.colorAttachments[3].loadAction  = MTLLoadActionDontCare;
+        pass.colorAttachments[3].storeAction = MTLStoreActionStore;
 
         id<MTLRenderCommandEncoder> enc = [cmd_buf renderCommandEncoderWithDescriptor:pass];
         [enc setRenderPipelineState:state->pathtrace_pipeline];
@@ -636,18 +737,39 @@ Q_EXPORT void Q_plugin_render(Q_plugin_handle* handle, Q_render_frame* frame) {
         [enc endEncoding];
     }
 
-    // 2. Accumulate pass - blend new sample with history.
+    // 2. Accumulate all layers in a single compute encoder.
     {
         id<MTLComputeCommandEncoder> enc = [cmd_buf computeCommandEncoder];
         [enc setComputePipelineState:state->accumulate_pipeline];
-        [enc setTexture:state->render_target atIndex:0];
-        [enc setTexture:read_accum atIndex:1];
-        [enc setTexture:write_accum atIndex:2];
         [enc setBytes:&state->frame_count length:sizeof(uint32_t) atIndex:0];
 
         MTLSize grid = MTLSizeMake(width, height, 1);
         MTLSize group = MTLSizeMake(16, 16, 1);
+
+        // Beauty.
+        [enc setTexture:state->render_target atIndex:0];
+        [enc setTexture:read_accum atIndex:1];
+        [enc setTexture:write_accum atIndex:2];
         [enc dispatchThreads:grid threadsPerThreadgroup:group];
+
+        // Albedo.
+        [enc setTexture:state->aov_albedo_rt atIndex:0];
+        [enc setTexture:albedo_read atIndex:1];
+        [enc setTexture:albedo_write atIndex:2];
+        [enc dispatchThreads:grid threadsPerThreadgroup:group];
+
+        // Normal.
+        [enc setTexture:state->aov_normal_rt atIndex:0];
+        [enc setTexture:normal_read atIndex:1];
+        [enc setTexture:normal_write atIndex:2];
+        [enc dispatchThreads:grid threadsPerThreadgroup:group];
+
+        // Depth.
+        [enc setTexture:state->aov_depth_rt atIndex:0];
+        [enc setTexture:depth_read atIndex:1];
+        [enc setTexture:depth_write atIndex:2];
+        [enc dispatchThreads:grid threadsPerThreadgroup:group];
+
         [enc endEncoding];
     }
 
@@ -669,31 +791,28 @@ Q_EXPORT void Q_plugin_render(Q_plugin_handle* handle, Q_render_frame* frame) {
     state->frame_count++;
 }
 
-Q_EXPORT Q_readback_result Q_plugin_readback(Q_plugin_handle* handle) {
-    Q_readback_result result{};
-    if (!handle) return result;
+namespace {
 
-    auto* state = reinterpret_cast<plugin_state*>(handle);
+/// @brief Blits a GPU-private texture to a malloc'd float array.
+Q_aov_buffer blit_texture_to_cpu(
+    id<MTLDevice> device,
+    id<MTLTexture> source,
+    id<MTLCommandQueue> queue
+) {
+    Q_aov_buffer buf{};
+    if (!source) return buf;
 
-    // After render, ping was flipped, so the most recently written buffer
-    // is the opposite of the current ping state.
-    id<MTLTexture> source = state->ping ? state->accum_b : state->accum_a;
-    if (!source) return result;
+    uint32_t w  = static_cast<uint32_t>(source.width);
+    uint32_t h  = static_cast<uint32_t>(source.height);
+    uint32_t ch = 4;
+    size_t bpr   = w * ch * sizeof(float);
+    size_t total = bpr * h;
 
-    uint32_t width  = static_cast<uint32_t>(source.width);
-    uint32_t height = static_cast<uint32_t>(source.height);
-    uint32_t channels = 4;
-    size_t bytes_per_row = width * channels * sizeof(float);
-    size_t total_bytes   = bytes_per_row * height;
-
-    // Create a shared buffer for CPU readback.
-    id<MTLBuffer> readback_buffer = [state->device
-        newBufferWithLength:total_bytes
+    id<MTLBuffer> readback_buf = [device
+        newBufferWithLength:total
         options:MTLResourceStorageModeShared];
-    if (!readback_buffer) return result;
+    if (!readback_buf) return buf;
 
-    // Blit from private texture to shared buffer.
-    id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)state->context->gpu->queue;
     id<MTLCommandBuffer> cmd = [queue commandBuffer];
     id<MTLBlitCommandEncoder> blit = [cmd blitCommandEncoder];
 
@@ -701,27 +820,44 @@ Q_EXPORT Q_readback_result Q_plugin_readback(Q_plugin_handle* handle) {
               sourceSlice:0
               sourceLevel:0
              sourceOrigin:MTLOriginMake(0, 0, 0)
-               sourceSize:MTLSizeMake(width, height, 1)
-                 toBuffer:readback_buffer
+               sourceSize:MTLSizeMake(w, h, 1)
+                 toBuffer:readback_buf
         destinationOffset:0
-   destinationBytesPerRow:bytes_per_row
- destinationBytesPerImage:total_bytes];
+   destinationBytesPerRow:bpr
+ destinationBytesPerImage:total];
 
     [blit endEncoding];
     [cmd commit];
     [cmd waitUntilCompleted];
 
-    // Copy from Metal buffer to a plain malloc'd float array.
-    float* data = static_cast<float*>(std::malloc(total_bytes));
-    if (!data) return result;
-    std::memcpy(data, readback_buffer.contents, total_bytes);
+    float* data = static_cast<float*>(std::malloc(total));
+    if (!data) return buf;
+    std::memcpy(data, readback_buf.contents, total);
 
-    result.data     = data;
-    result.width    = width;
-    result.height   = height;
-    result.channels = channels;
+    buf.data     = data;
+    buf.width    = w;
+    buf.height   = h;
+    buf.channels = ch;
+    return buf;
+}
 
-    log_msg(state, "HDR readback complete");
+}  // namespace
+
+Q_EXPORT Q_readback_result Q_plugin_readback(Q_plugin_handle* handle) {
+    Q_readback_result result{};
+    if (!handle) return result;
+
+    auto* state = reinterpret_cast<plugin_state*>(handle);
+    id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)state->context->gpu->queue;
+    id<MTLTexture> source = state->ping ? state->accum_b : state->accum_a;
+
+    Q_aov_buffer buf = blit_texture_to_cpu(state->device, source, queue);
+    result.data     = buf.data;
+    result.width    = buf.width;
+    result.height   = buf.height;
+    result.channels = buf.channels;
+
+    if (buf.data) log_msg(state, "HDR readback complete");
 
     return result;
 }
@@ -730,6 +866,38 @@ Q_EXPORT void Q_plugin_readback_free(Q_readback_result* result) {
     if (result && result->data) {
         std::free(result->data);
         result->data = nullptr;
+    }
+}
+
+Q_EXPORT Q_readback_aov_result Q_plugin_readback_aov(Q_plugin_handle* handle) {
+    Q_readback_aov_result result{};
+    if (!handle) return result;
+
+    auto* state = reinterpret_cast<plugin_state*>(handle);
+    id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)state->context->gpu->queue;
+
+    // After render, ping was flipped. Most recently written accum is opposite of current ping.
+    id<MTLTexture> beauty_src = state->ping ? state->accum_b : state->accum_a;
+    id<MTLTexture> albedo_src = state->ping ? state->aov_albedo_accum_b : state->aov_albedo_accum_a;
+    id<MTLTexture> normal_src = state->ping ? state->aov_normal_accum_b : state->aov_normal_accum_a;
+    id<MTLTexture> depth_src  = state->ping ? state->aov_depth_accum_b  : state->aov_depth_accum_a;
+
+    result.buffers[Q_AOV_BEAUTY] = blit_texture_to_cpu(state->device, beauty_src, queue);
+    result.buffers[Q_AOV_ALBEDO] = blit_texture_to_cpu(state->device, albedo_src, queue);
+    result.buffers[Q_AOV_NORMAL] = blit_texture_to_cpu(state->device, normal_src, queue);
+    result.buffers[Q_AOV_DEPTH]  = blit_texture_to_cpu(state->device, depth_src, queue);
+
+    log_msg(state, "AOV readback complete");
+    return result;
+}
+
+Q_EXPORT void Q_plugin_readback_aov_free(Q_readback_aov_result* result) {
+    if (!result) return;
+    for (int i = 0; i < Q_AOV_COUNT; ++i) {
+        if (result->buffers[i].data) {
+            std::free(result->buffers[i].data);
+            result->buffers[i].data = nullptr;
+        }
     }
 }
 
