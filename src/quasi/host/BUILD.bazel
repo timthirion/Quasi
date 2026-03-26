@@ -1,5 +1,7 @@
 """Host module - window and application"""
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 _STRIP_PREFIX = "/src"
@@ -22,6 +24,7 @@ cc_binary(
     deps = [
         ":window",
         "//src/quasi/gpu/metal:context",
+        "//src/quasi/io:exr_writer",
         "//src/quasi/plugin",
         "@bazel_tools//tools/cpp/runfiles",
     ],

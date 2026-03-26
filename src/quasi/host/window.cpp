@@ -18,6 +18,10 @@ window::~window() {
 window::window(window&& other) noexcept
     : window_{other.window_}
     , resize_callback_{std::move(other.resize_callback_)}
+    , mouse_button_callback_{std::move(other.mouse_button_callback_)}
+    , cursor_pos_callback_{std::move(other.cursor_pos_callback_)}
+    , scroll_callback_{std::move(other.scroll_callback_)}
+    , key_callback_{std::move(other.key_callback_)}
 {
     other.window_ = nullptr;
     if (window_) {
@@ -32,6 +36,10 @@ window& window::operator=(window&& other) noexcept {
         }
         window_ = other.window_;
         resize_callback_ = std::move(other.resize_callback_);
+        mouse_button_callback_ = std::move(other.mouse_button_callback_);
+        cursor_pos_callback_ = std::move(other.cursor_pos_callback_);
+        scroll_callback_ = std::move(other.scroll_callback_);
+        key_callback_ = std::move(other.key_callback_);
         other.window_ = nullptr;
         if (window_) {
             glfwSetWindowUserPointer(window_, this);
@@ -71,6 +79,7 @@ auto window::create(
     glfwSetMouseButtonCallback(glfw_window, mouse_button_callback_glfw);
     glfwSetCursorPosCallback(glfw_window, cursor_pos_callback_glfw);
     glfwSetScrollCallback(glfw_window, scroll_callback_glfw);
+    glfwSetKeyCallback(glfw_window, key_callback_glfw);
 
     return win;
 }
@@ -154,6 +163,17 @@ void window::scroll_callback_glfw(GLFWwindow* glfw_window, double x_offset, doub
     auto* self = static_cast<window*>(glfwGetWindowUserPointer(glfw_window));
     if (self && self->scroll_callback_) {
         self->scroll_callback_(x_offset, y_offset);
+    }
+}
+
+void window::set_key_callback(key_callback callback) {
+    key_callback_ = std::move(callback);
+}
+
+void window::key_callback_glfw(GLFWwindow* glfw_window, int key, int scancode, int action, int mods) {
+    auto* self = static_cast<window*>(glfwGetWindowUserPointer(glfw_window));
+    if (self && self->key_callback_) {
+        self->key_callback_(key, scancode, action, mods);
     }
 }
 

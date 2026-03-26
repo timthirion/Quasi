@@ -1,5 +1,7 @@
 """GPU module - GPU context abstractions"""
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 _STRIP_PREFIX = "/src"

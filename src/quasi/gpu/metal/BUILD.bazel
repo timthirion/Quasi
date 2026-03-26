@@ -1,5 +1,7 @@
 """Metal GPU backend"""
 
+load("@rules_cc//cc:defs.bzl", "cc_library", "objc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 _STRIP_PREFIX = "/src"

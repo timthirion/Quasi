@@ -46,12 +46,14 @@ public:
 
     /// @brief Function pointer types matching the C interface.
     /// @{
-    using abi_version_fn = uint32_t (*)();
-    using get_info_fn    = plugin_info (*)();
-    using create_fn      = plugin_handle* (*)(plugin_context*);
-    using destroy_fn     = void (*)(plugin_handle*);
-    using update_fn      = void (*)(plugin_handle*, float);
-    using render_fn      = void (*)(plugin_handle*, Q::gpu::render_frame*);
+    using abi_version_fn   = uint32_t (*)();
+    using get_info_fn      = plugin_info (*)();
+    using create_fn        = plugin_handle* (*)(plugin_context*);
+    using destroy_fn       = void (*)(plugin_handle*);
+    using update_fn        = void (*)(plugin_handle*, float);
+    using render_fn        = void (*)(plugin_handle*, Q::gpu::render_frame*);
+    using readback_fn      = readback_result (*)(plugin_handle*);
+    using readback_free_fn = void (*)(readback_result*);
     /// @}
 
     /// @brief Loads a plugin from a dynamic library.
@@ -101,10 +103,18 @@ public:
             return std::unexpected{error::symbol_not_found};
         }
 
-        // Check ABI version
+        // Check ABI version (accept any version in supported range).
         uint32_t plugin_abi = p.fn_abi_version_();
-        if (plugin_abi != k_plugin_abi_version) {
+        if (plugin_abi < 1 || plugin_abi > k_plugin_abi_version) {
             return std::unexpected{error::abi_mismatch};
+        }
+
+        // Resolve optional symbols (ABI v2+).
+        if (auto sym = library.get_symbol<readback_fn>(k_symbol_readback)) {
+            p.fn_readback_ = *sym;
+        }
+        if (auto sym = library.get_symbol<readback_free_fn>(k_symbol_readback_free)) {
+            p.fn_readback_free_ = *sym;
         }
 
         // Create the plugin instance
@@ -130,6 +140,8 @@ public:
         , fn_destroy_{std::exchange(other.fn_destroy_, nullptr)}
         , fn_update_{std::exchange(other.fn_update_, nullptr)}
         , fn_render_{std::exchange(other.fn_render_, nullptr)}
+        , fn_readback_{std::exchange(other.fn_readback_, nullptr)}
+        , fn_readback_free_{std::exchange(other.fn_readback_free_, nullptr)}
     {}
 
     loader& operator=(loader&& other) noexcept {
@@ -142,6 +154,8 @@ public:
             fn_destroy_ = std::exchange(other.fn_destroy_, nullptr);
             fn_update_ = std::exchange(other.fn_update_, nullptr);
             fn_render_ = std::exchange(other.fn_render_, nullptr);
+            fn_readback_ = std::exchange(other.fn_readback_, nullptr);
+            fn_readback_free_ = std::exchange(other.fn_readback_free_, nullptr);
         }
         return *this;
     }
@@ -162,6 +176,26 @@ public:
     void render(Q::gpu::render_frame* frame) {
         if (handle_ && fn_render_) {
             fn_render_(handle_, frame);
+        }
+    }
+
+    /// @brief Returns true if the plugin supports HDR readback.
+    [[nodiscard]] bool supports_readback() const noexcept {
+        return fn_readback_ != nullptr && fn_readback_free_ != nullptr;
+    }
+
+    /// @brief Reads back the current accumulated HDR framebuffer.
+    [[nodiscard]] readback_result readback() {
+        if (handle_ && fn_readback_) {
+            return fn_readback_(handle_);
+        }
+        return readback_result{.data = nullptr, .width = 0, .height = 0, .channels = 0};
+    }
+
+    /// @brief Frees readback memory.
+    void readback_free(readback_result* result) {
+        if (fn_readback_free_ && result) {
+            fn_readback_free_(result);
         }
     }
 
@@ -202,12 +236,14 @@ public:
 private:
     plugin_handle* handle_ = nullptr;
 
-    abi_version_fn fn_abi_version_ = nullptr;
-    get_info_fn    fn_get_info_    = nullptr;
-    create_fn      fn_create_      = nullptr;
-    destroy_fn     fn_destroy_     = nullptr;
-    update_fn      fn_update_      = nullptr;
-    render_fn      fn_render_      = nullptr;
+    abi_version_fn   fn_abi_version_   = nullptr;
+    get_info_fn      fn_get_info_      = nullptr;
+    create_fn        fn_create_        = nullptr;
+    destroy_fn       fn_destroy_       = nullptr;
+    update_fn        fn_update_        = nullptr;
+    render_fn        fn_render_        = nullptr;
+    readback_fn      fn_readback_      = nullptr;
+    readback_free_fn fn_readback_free_ = nullptr;
 };
 
 /// @brief Converts a loader error to a human-readable string.

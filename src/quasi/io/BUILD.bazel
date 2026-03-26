@@ -1,0 +1,18 @@
+"""IO module - file format writers"""
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+_STRIP_PREFIX = "/src"
+
+cc_library(
+    name = "exr_writer",
+    srcs = ["exr_writer.cpp"],
+    hdrs = ["exr_writer.hpp"],
+    strip_include_prefix = _STRIP_PREFIX,
+    deps = [
+        "//src/quasi/plugin:plugin_interface",
+        "@openexr//:OpenEXR",
+    ],
+)

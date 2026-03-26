@@ -1,5 +1,7 @@
 """Metal backend - GPU rendering via Apple Metal"""
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "objc_library")
+
 objc_library(
     name = "backend_impl",
     srcs = ["plugin.mm"],

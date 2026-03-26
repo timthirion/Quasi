@@ -50,6 +50,9 @@ public:
     /// @brief Callback type for scroll events.
     using scroll_callback = std::function<void(double x_offset, double y_offset)>;
 
+    /// @brief Callback type for key events.
+    using key_callback = std::function<void(int key, int scancode, int action, int mods)>;
+
     /// @brief Creates a new window.
     /// @param title Window title.
     /// @param width Initial width in screen coordinates.
@@ -103,6 +106,9 @@ public:
     /// @brief Sets a callback for scroll events.
     void set_scroll_callback(scroll_callback callback);
 
+    /// @brief Sets a callback for key events.
+    void set_key_callback(key_callback callback);
+
     /// @brief Checks if the window is valid.
     [[nodiscard]] bool is_valid() const noexcept { return window_ != nullptr; }
 
@@ -115,11 +121,13 @@ private:
     mouse_button_callback mouse_button_callback_;
     cursor_pos_callback cursor_pos_callback_;
     scroll_callback scroll_callback_;
+    key_callback key_callback_;
 
     static void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
     static void mouse_button_callback_glfw(GLFWwindow* glfw_window, int button, int action, int mods);
     static void cursor_pos_callback_glfw(GLFWwindow* glfw_window, double x, double y);
     static void scroll_callback_glfw(GLFWwindow* glfw_window, double x_offset, double y_offset);
+    static void key_callback_glfw(GLFWwindow* glfw_window, int key, int scancode, int action, int mods);
 };
 
 }  // namespace Q::host

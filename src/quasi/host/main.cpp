@@ -5,6 +5,7 @@
 
 #include <quasi/host/window.hpp>
 #include <quasi/gpu/metal/context.hpp>
+#include <quasi/io/exr_writer.hpp>
 #include <quasi/plugin/plugin.hpp>
 
 #include "tools/cpp/runfiles/runfiles.h"
@@ -15,6 +16,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
+#include <string_view>
 
 namespace {
 
@@ -118,13 +120,21 @@ struct orbit_camera {
 int main(int argc, char* argv[]) {
     using bazel::tools::cpp::runfiles::Runfiles;
 
-    // Parse command line for plugin path
+    // Parse command line.
     std::filesystem::path plugin_path;
     std::unique_ptr<Runfiles> runfiles;
+    int render_frames = 0;  // 0 = interactive, >0 = render N frames then save & exit.
 
-    if (argc > 1) {
-        plugin_path = argv[1];
-    } else {
+    for (int i = 1; i < argc; ++i) {
+        std::string_view arg = argv[i];
+        if (arg == "--render" && i + 1 < argc) {
+            render_frames = std::atoi(argv[++i]);
+        } else if (arg[0] != '-') {
+            plugin_path = arg;
+        }
+    }
+
+    if (plugin_path.empty()) {
         // Use default plugin from runfiles
         std::string error;
         runfiles.reset(Runfiles::Create(argv[0], &error));
@@ -179,6 +189,14 @@ int main(int argc, char* argv[]) {
         camera.on_scroll(x_offset, y_offset);
     });
 
+    // Keyboard input.
+    bool save_requested = false;
+    window.set_key_callback([&save_requested](int key, int /*scancode*/, int action, int /*mods*/) {
+        if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+            save_requested = true;
+        }
+    });
+
     // Load the plugin
     auto lib_result = Q::plugin::dynamic_library::open(plugin_path);
     if (!lib_result) {
@@ -216,6 +234,11 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     auto last_time = std::chrono::steady_clock::now();
+    int frames_rendered = 0;
+
+    if (render_frames > 0) {
+        std::printf("[Host] Batch mode: rendering %d frames then saving EXR\n", render_frames);
+    }
 
     while (!window.should_close()) {
         window.poll_events();
@@ -243,6 +266,42 @@ int main(int argc, char* argv[]) {
 
             // Present
             metal.end_frame(frame);
+            ++frames_rendered;
+
+            // Auto-save in batch mode.
+            if (render_frames > 0 && frames_rendered >= render_frames) {
+                save_requested = true;
+            }
+
+            // Handle save request after frame is complete.
+            if (save_requested) {
+                save_requested = false;
+
+                if (plugin.supports_readback()) {
+                    std::printf("[Host] Saving EXR (%d samples)...\n", frames_rendered);
+
+                    auto rb = plugin.readback();
+                    if (rb.data) {
+                        auto path = Q::io::make_timestamped_path(".");
+                        auto write_result = Q::io::write_exr(path, rb);
+                        if (write_result) {
+                            std::printf("[Host] Saved: %s\n", path.c_str());
+                        } else {
+                            std::fprintf(stderr, "[Host] EXR write failed: %s\n",
+                                         Q::io::to_string(write_result.error()));
+                        }
+                        plugin.readback_free(&rb);
+                    } else {
+                        std::fprintf(stderr, "[Host] Readback returned no data\n");
+                    }
+                } else {
+                    std::printf("[Host] Plugin does not support HDR readback\n");
+                }
+
+                if (render_frames > 0) {
+                    window.close();
+                }
+            }
         }
     }
 

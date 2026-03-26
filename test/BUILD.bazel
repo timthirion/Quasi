@@ -1,5 +1,7 @@
 """Tests for Quasi"""
 
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
 cc_test(
     name = "async_test",
     size = "small",
@@ -17,6 +19,16 @@ cc_test(
     deps = [
         "//src/quasi/plugin:plugin_interface",
         "//src/quasi/plugin:dynamic_library",
+        "@catch2//:catch2_main",
+    ],
+)
+
+cc_test(
+    name = "exr_writer_test",
+    size = "small",
+    srcs = ["exr_writer_test.cpp"],
+    deps = [
+        "//src/quasi/io:exr_writer",
         "@catch2//:catch2_main",
     ],
 )

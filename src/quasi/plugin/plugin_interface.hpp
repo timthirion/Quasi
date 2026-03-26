@@ -58,6 +58,17 @@ struct Q_plugin_context {
     void (*request_shutdown)(void* host_data);
 };
 
+/// @brief CPU-side framebuffer data returned by Q_plugin_readback().
+///
+/// The plugin allocates the data buffer. The host must call
+/// Q_plugin_readback_free() when finished.
+struct Q_readback_result {
+    float*   data;      ///< RGBA float pixel data, row-major, top-to-bottom.
+    uint32_t width;     ///< Image width in pixels.
+    uint32_t height;    ///< Image height in pixels.
+    uint32_t channels;  ///< Number of channels (always 4 for RGBA).
+};
+
 /// @name Plugin C API
 /// @brief Functions that plugins must implement with extern "C" linkage.
 ///
@@ -96,6 +107,15 @@ void Q_plugin_update(Q_plugin_handle* handle, float delta_time);
 /// @param frame Per-frame render data (drawable, command buffer, etc.)
 void Q_plugin_render(Q_plugin_handle* handle, Q_render_frame* frame);
 
+/// @brief Reads back the current accumulated HDR framebuffer to CPU memory.
+/// @param handle The plugin handle.
+/// @return Readback result with pixel data, or a result with data == nullptr on failure.
+Q_readback_result Q_plugin_readback(Q_plugin_handle* handle);
+
+/// @brief Frees memory allocated by Q_plugin_readback().
+/// @param result The readback result to free.
+void Q_plugin_readback_free(Q_readback_result* result);
+
 /// @}
 
 }  // extern "C"
@@ -108,20 +128,23 @@ using plugin_handle  = Q_plugin_handle;
 using plugin_version = Q_plugin_version;
 using plugin_info    = Q_plugin_info;
 using plugin_context = Q_plugin_context;
+using readback_result = Q_readback_result;
 /// @}
 
 /// @brief Symbol names for dlsym() lookup.
 /// @{
-inline constexpr const char* k_symbol_abi_version = "Q_plugin_abi_version";
-inline constexpr const char* k_symbol_get_info    = "Q_plugin_get_info";
-inline constexpr const char* k_symbol_create      = "Q_plugin_create";
-inline constexpr const char* k_symbol_destroy     = "Q_plugin_destroy";
-inline constexpr const char* k_symbol_update      = "Q_plugin_update";
-inline constexpr const char* k_symbol_render      = "Q_plugin_render";
+inline constexpr const char* k_symbol_abi_version   = "Q_plugin_abi_version";
+inline constexpr const char* k_symbol_get_info      = "Q_plugin_get_info";
+inline constexpr const char* k_symbol_create        = "Q_plugin_create";
+inline constexpr const char* k_symbol_destroy       = "Q_plugin_destroy";
+inline constexpr const char* k_symbol_update        = "Q_plugin_update";
+inline constexpr const char* k_symbol_render        = "Q_plugin_render";
+inline constexpr const char* k_symbol_readback      = "Q_plugin_readback";
+inline constexpr const char* k_symbol_readback_free = "Q_plugin_readback_free";
 /// @}
 
 /// @brief Current ABI version. Increment when the interface changes.
-inline constexpr uint32_t k_plugin_abi_version = 1;
+inline constexpr uint32_t k_plugin_abi_version = 2;
 
 /// @brief Equality comparison for plugin versions.
 [[nodiscard]] constexpr bool operator==(plugin_version a, plugin_version b) noexcept {

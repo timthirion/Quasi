@@ -9,6 +9,8 @@
 #import <QuartzCore/CAMetalLayer.h>
 
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 
 namespace {
 
@@ -665,6 +667,70 @@ Q_EXPORT void Q_plugin_render(Q_plugin_handle* handle, Q_render_frame* frame) {
 
     state->ping = !state->ping;
     state->frame_count++;
+}
+
+Q_EXPORT Q_readback_result Q_plugin_readback(Q_plugin_handle* handle) {
+    Q_readback_result result{};
+    if (!handle) return result;
+
+    auto* state = reinterpret_cast<plugin_state*>(handle);
+
+    // After render, ping was flipped, so the most recently written buffer
+    // is the opposite of the current ping state.
+    id<MTLTexture> source = state->ping ? state->accum_b : state->accum_a;
+    if (!source) return result;
+
+    uint32_t width  = static_cast<uint32_t>(source.width);
+    uint32_t height = static_cast<uint32_t>(source.height);
+    uint32_t channels = 4;
+    size_t bytes_per_row = width * channels * sizeof(float);
+    size_t total_bytes   = bytes_per_row * height;
+
+    // Create a shared buffer for CPU readback.
+    id<MTLBuffer> readback_buffer = [state->device
+        newBufferWithLength:total_bytes
+        options:MTLResourceStorageModeShared];
+    if (!readback_buffer) return result;
+
+    // Blit from private texture to shared buffer.
+    id<MTLCommandQueue> queue = (__bridge id<MTLCommandQueue>)state->context->gpu->queue;
+    id<MTLCommandBuffer> cmd = [queue commandBuffer];
+    id<MTLBlitCommandEncoder> blit = [cmd blitCommandEncoder];
+
+    [blit copyFromTexture:source
+              sourceSlice:0
+              sourceLevel:0
+             sourceOrigin:MTLOriginMake(0, 0, 0)
+               sourceSize:MTLSizeMake(width, height, 1)
+                 toBuffer:readback_buffer
+        destinationOffset:0
+   destinationBytesPerRow:bytes_per_row
+ destinationBytesPerImage:total_bytes];
+
+    [blit endEncoding];
+    [cmd commit];
+    [cmd waitUntilCompleted];
+
+    // Copy from Metal buffer to a plain malloc'd float array.
+    float* data = static_cast<float*>(std::malloc(total_bytes));
+    if (!data) return result;
+    std::memcpy(data, readback_buffer.contents, total_bytes);
+
+    result.data     = data;
+    result.width    = width;
+    result.height   = height;
+    result.channels = channels;
+
+    log_msg(state, "HDR readback complete");
+
+    return result;
+}
+
+Q_EXPORT void Q_plugin_readback_free(Q_readback_result* result) {
+    if (result && result->data) {
+        std::free(result->data);
+        result->data = nullptr;
+    }
 }
 
 }  // extern "C"

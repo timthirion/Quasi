@@ -1,5 +1,7 @@
 """Async module - coroutines and cooperative scheduling"""
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 _STRIP_PREFIX = "/src"
