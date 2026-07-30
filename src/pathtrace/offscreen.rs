@@ -1941,6 +1941,38 @@ mod tests {
         }
     }
 
+    /// PT-bloom: a pixel *inside* the knee band
+    /// `[threshold - knee, threshold + knee]` takes the quadratic
+    /// branch, not the linear one — a small positive weight that
+    /// ramps smoothly rather than banding at the threshold. This is
+    /// the milestone's fourth mandated case (the other three pin
+    /// sub-threshold, above-threshold, and firefly behaviour); it
+    /// pins the closed form so a future refactor can't silently
+    /// swap the quadratic for a hard step.
+    #[test]
+    fn bloom_soft_knee_in_knee_takes_quadratic_branch() {
+        // brightness = 0.7, threshold = 1.0, knee = 0.5 →
+        // curve_x = clamp(0.7 - 1.0 + 0.5, 0, 1.0) = 0.2
+        // curve   = 0.2² * 0.25 / 0.5 = 0.02
+        // linear  = 0.7 - 1.0 = -0.3   (loses to the quadratic)
+        // weight  = 0.02 / 0.7
+        let out = Aovs::soft_knee_extract_reference([0.7, 0.6, 0.5], 1.0, 0.5);
+        let weight = 0.02 / 0.7;
+        let expected = [0.7 * weight, 0.6 * weight, 0.5 * weight];
+        for c in 0..3 {
+            assert!(
+                (out[c] - expected[c]).abs() < 1e-6,
+                "channel {c}: got {}, want {}",
+                out[c],
+                expected[c]
+            );
+        }
+        // Load-bearing: strictly positive (the knee is *emitting*),
+        // yet far below the linear branch's output — no banding.
+        assert!(out[0] > 0.0);
+        assert!(out[0] < 0.1);
+    }
+
     /// PT-bloom: NaN / Inf / firefly pixels are clamped to zero
     /// before any math runs — preventing them from propagating
     /// through the mip chain.

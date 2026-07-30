@@ -60,8 +60,8 @@ orbit the camera, flip the integrator, watch convergence — without
 recompiling anything for a separate web target.
 
 It's actively in development against a sequence of focused plans
-in [`plans/`](plans/). Ten of them have closed so far, each one
-shipping a reference render and pinning the math in CPU-side
+in [`plans/`](plans/). Twenty-nine of them have closed so far, each
+one shipping a reference render and pinning the math in CPU-side
 tests.
 
 ## Features
@@ -85,6 +85,15 @@ tests.
 **Integrator + samplers**
 - Multiple-Importance Sampling + Next-Event Estimation
 - PCG, Halton, and Sobol samplers (runtime-switchable)
+
+**Post-processing**
+- HDR bloom — Kawase dual-filter mip chain, Unity-correct soft-knee
+  threshold, composited pre-tonemap (`PT-bloom`)
+- Analytic à-trous wavelet denoiser, edge-stopping on the albedo /
+  normal / depth AOVs (`PT-denoise`)
+
+**Sampling**
+- Variance-driven adaptive sample allocation (`PT-adaptive`)
 
 **Runtime**
 - Single WGSL megakernel, progressive HDR accumulation, AOV outputs (radiance / albedo / normal / depth)

@@ -15,6 +15,7 @@ truth for "what's done." Commit plan updates alongside the code they describe.
 - `ROADMAP.md` — the high-level, phased direction. The north star.
 - `NNNN-short-slug.md` — one document per concrete piece of work, zero-padded and
   incrementing (`0001-`, `0002-`, …). The number is ordering, not priority.
+  **Next free number: `0036`.**
 - `research/` — research plans (hypotheses, experimental designs, paper
   roadmaps) with their own `RNNNN-*` numbering. See `research/README.md`.
   These run in parallel to implementation plans; cross-link freely between
@@ -25,7 +26,7 @@ truth for "what's done." Commit plan updates alongside the code they describe.
 ```markdown
 # <Title>
 
-- **Status:** proposed | active | blocked | done | abandoned
+- **Status:** proposed | active | blocked | completed | abandoned
 - **Last updated:** YYYY-MM-DD
 - **Last touched on:** <machine / context, so the next session knows where it ran>
 
@@ -50,7 +51,18 @@ The acceptance criteria — tests, reference images, perf targets.
 
 ## Conventions
 
-- Update **Status** and **Last updated** every working session.
+- Update **Status** and **Last updated** every working session. This is the
+  convention that has drifted most in practice: plans 0029 and 0030 both sat at
+  a stale status for six weeks while the work moved on around them, and 0029's
+  intensity-sweep table sat in `/tmp` waiting to be transcribed. If the plan
+  file disagrees with the git log, the plan file is the bug.
+- `draft` is not a status — use `proposed`. Plans 0001–0013 use `done` rather
+  than `completed` because they shipped before the vocabulary settled; leave
+  those headers alone.
+- Closing a plan goes through the [`close-plan`](../.claude/skills/close-plan/SKILL.md)
+  skill. If a milestone's stated criteria weren't met, split the remainder into
+  a follow-up plan rather than ticking the box — see 0029 → 0035 for the worked
+  example.
 - Resolve an open question in-doc (with the answer) rather than dropping it.
 - When a plan is `done`, leave it as a record and link it from `ROADMAP.md`.
 - Render-quality work should cite a reference (ground-truth image, paper, metric)

@@ -1,8 +1,8 @@
 # RT-micropoly — software rasterizer for sub-pixel triangles
 
-- **Status:** draft
-- **Last updated:** 2026-06-15
-- **Last touched on:** initial draft from the Nanite-direction scoping note
+- **Status:** proposed — rev 1, pre-revision. No implementation started (verified 2026-07-30). Sequenced after [`0032`](0032-rt-cluster-cull.md)
+- **Last updated:** 2026-07-30
+- **Last touched on:** 2026-07-30 roadmap-reconciliation pass — status vocabulary only. Substance is still the initial draft from the Nanite-direction scoping note; not yet through `plan-skeptic` revision, so treat the design as unhardened.
 
 ## Goal
 

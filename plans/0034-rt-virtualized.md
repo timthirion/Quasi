@@ -1,8 +1,8 @@
 # RT-virtualized — full virtualized geometry (cluster DAG + LOD + page streaming)
 
-- **Status:** draft
-- **Last updated:** 2026-06-15
-- **Last touched on:** initial draft from the Nanite-direction scoping note
+- **Status:** proposed — rev 1, pre-revision. No implementation started (verified 2026-07-30). Depends on [`0032`](0032-rt-cluster-cull.md) + [`0033`](0033-rt-micropoly.md); largest remaining scope in the repo
+- **Last updated:** 2026-07-30
+- **Last touched on:** 2026-07-30 roadmap-reconciliation pass — status vocabulary only. Substance is still the initial draft from the Nanite-direction scoping note; not yet through `plan-skeptic` revision, so treat the design as unhardened.
 
 ## Goal
 

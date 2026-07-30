@@ -923,6 +923,66 @@ mod tests {
         assert!(r.adaptive);
     }
 
+    /// PT-bloom/cli: `--bloom` defaults off, so every pre-plan
+    /// invocation keeps its exact prior output. The flag is the
+    /// gate for the whole pass — `cfg.bloom` stays `None` without
+    /// it and the mip chain is never allocated.
+    #[test]
+    fn bloom_flag_defaults_off_and_parses() {
+        let r = parse(&[]).expect("empty parse");
+        assert!(!r.bloom, "default should be --bloom off");
+
+        let r = parse(&["--bloom"]).expect("--bloom parse");
+        assert!(r.bloom);
+    }
+
+    /// PT-bloom/cli: the three tuning flags parse, and their
+    /// defaults are the values the intensity sweep locked in
+    /// (intensity 0.04 — the only swept value landing inside the
+    /// plan's 1.5×–2.0× annular-ring band).
+    #[test]
+    fn bloom_tuning_flags_parse_with_swept_defaults() {
+        let r = parse(&[]).expect("empty parse");
+        assert!((r.bloom_intensity - 0.04).abs() < 1e-9);
+        assert!((r.bloom_threshold - 1.0).abs() < 1e-9);
+        assert!((r.bloom_knee - 0.5).abs() < 1e-9);
+
+        let r = parse(&[
+            "--bloom",
+            "--bloom-intensity",
+            "0.08",
+            "--bloom-threshold",
+            "1.5",
+            "--bloom-knee",
+            "0.25",
+        ])
+        .expect("parse");
+        assert!(r.bloom);
+        assert!((r.bloom_intensity - 0.08).abs() < 1e-9);
+        assert!((r.bloom_threshold - 1.5).abs() < 1e-9);
+        assert!((r.bloom_knee - 0.25).abs() < 1e-9);
+    }
+
+    /// PT-bloom/cli: the guards that keep the shader out of
+    /// undefined territory — negative intensity would subtract
+    /// radiance, and a zero/negative knee divides by ~zero in the
+    /// quadratic branch.
+    #[test]
+    fn bloom_rejects_out_of_range_tuning() {
+        assert!(parse(&["--bloom-intensity", "-0.1"]).is_err());
+        assert!(parse(&["--bloom-knee", "0"]).is_err());
+        assert!(parse(&["--bloom-knee", "-0.5"]).is_err());
+
+        // Missing values error rather than silently defaulting.
+        assert!(parse(&["--bloom-intensity"]).is_err());
+        assert!(parse(&["--bloom-threshold"]).is_err());
+        assert!(parse(&["--bloom-knee"]).is_err());
+
+        // Zero intensity is legal: bloom computed, contributes
+        // nothing. Useful as an A/B control in the sweep harness.
+        assert!(parse(&["--bloom-intensity", "0"]).is_ok());
+    }
+
     /// PT-adaptive/cli: `--noise-threshold` accepts a positive
     /// float; rejects zero or negative.
     #[test]

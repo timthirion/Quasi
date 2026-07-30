@@ -1,7 +1,7 @@
 # PT-nfor — NFOR (non-local-means) feature-weighted denoiser
 
-- **Status:** draft
-- **Last updated:** 2026-06-15
+- **Status:** proposed — fully specified, no implementation started (verified 2026-07-30: no NFOR code in `src/`)
+- **Last updated:** 2026-07-30
 - **Last touched on:** rev 2.1 — round-2 skeptic patches: pivots from 3×3 spatial-prefilter (autocorrelated DOF too low in caustic regions) to 4-sub-frame variance (DOF=3), corrects DenoiseParams field reference (sigma_position doesn't exist; defaults sigma_color=0.5, sigma_normal=32.0, passes=5), corrects Rousselle 2013/2017 paper-title conflation, fixes tests/cornell_gltf.rs → cornell_gltf.rs, removes invented "Quasi web team" claim, pairs halo-metric Done-when with RMSE-no-worse
 
 ## Goal

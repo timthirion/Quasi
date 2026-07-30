@@ -1,8 +1,8 @@
 # RT-cluster-cull — GPU-driven cluster culling for the raster track
 
-- **Status:** draft
-- **Last updated:** 2026-06-15
-- **Last touched on:** initial draft from the Nanite-direction scoping note
+- **Status:** proposed — rev 1, pre-revision. No implementation started (verified 2026-07-30)
+- **Last updated:** 2026-07-30
+- **Last touched on:** 2026-07-30 roadmap-reconciliation pass — status vocabulary only. Substance is still the initial draft from the Nanite-direction scoping note; it has not been through the `plan-skeptic` revision rounds that plans 0028–0031 got, so treat the design as unhardened.
 
 ## Goal
 

@@ -1,8 +1,33 @@
 # PT-sky — procedural atmospheric scattering sky
 
-- **Status:** in-flight (PT-sky/hosek-cpu math + scripts shipped; data vendor + validation gated on user run)
-- **Last updated:** 2026-06-15
-- **Last touched on:** rev 2.1 — round-2 skeptic patches: corrects Hosek-Wilkie 2013 solar-radiance paper citation (rev-2 cited the wrong paper), specifies reference C++ fork explicitly, tightens calibration-constant procedure (was hand-wavy "eyeballed"), adds dawn/sunset RMSE checks to catch 180° azimuth flip
+- **Status:** blocked — 3 of 5 milestones shipped; the remaining two need a local run (see *Blocked on* below)
+- **Last updated:** 2026-07-30
+- **Last touched on:** 2026-07-30 roadmap-reconciliation pass — status normalised from the free-text `in-flight` to the `blocked` vocabulary and the blocker written down explicitly. No code touched. Prior substantive work: 2026-06-17, `PT-sky/perf-measure` (bench harness + the `Findings` timing table).
+
+## Blocked on
+
+Shipped and green: `PT-sky/bake` (`bake_equirect`), `PT-sky/wire`
+(`--sky`, `--sky-elevation`, …), `PT-sky/noon-stability` (the
+bit-identical-bake tripwire). The bench harness and its timing table
+are in `Findings` — bake is ~10 ms at 1024×512, ~3× faster than the
+plan's a-priori estimate.
+
+Two milestones remain, both needing a **local run on the user's
+machine** rather than any further design work:
+
+1. **Hosek-Wilkie coefficient dataset vendoring + held-out
+   validation.** `scripts/sky/fetch_hosek_data.py` exists but the
+   dataset isn't vendored, so the ≤ 0.5%-on-≥95%-of-samples
+   validation gate has never executed. Everything downstream of this
+   is unverified against the reference.
+2. **`PT-sky/time-of-day`** (Sponza dawn / noon / sunset triptych)
+   and **`PT-sky/widget`** (sky-elevation slider) — both want long
+   renders and an interactive check.
+
+Nothing here is blocked on a decision; it's blocked on someone
+running it. If the dataset turns out to be unfetchable, that's a
+design question worth reopening (the fallback would be a Preetham
+sky, already partly present via the analytic sun-colour derivation).
 
 ## Goal
 
