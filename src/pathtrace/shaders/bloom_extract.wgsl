@@ -48,11 +48,18 @@ fn vs_main(@builtin(vertex_index) vid: u32) -> VsOut {
 }
 
 fn soft_knee_extract(rgb: vec3<f32>, threshold: f32, knee: f32) -> vec3<f32> {
-    // Guard against firefly pixels (NaN, Inf, > 1e6) — these would
-    // otherwise propagate through the entire mip chain and turn
-    // every composited pixel into garbage.
+    // Guard against firefly pixels (NaN, Inf, above the f16 range)
+    // — the mip chain is Rgba16Float, so anything above the f16 max
+    // (65504) becomes +Inf on store and would propagate through the
+    // entire chain via the tent-kernel upsample, turning every
+    // composited pixel into garbage. Prior versions of this guard
+    // used `< 1e6`, which left pixels in (65504, 1e6) unclamped —
+    // exactly the band `--emission-scale 500` renders (see the
+    // Vespa-night hero, commit `6486b93`) routinely occupy. The
+    // 6.5e4 threshold sits just below f16 max with a little
+    // headroom for the downstream `weight * safe` multiplication.
     let is_finite = rgb.x == rgb.x && rgb.y == rgb.y && rgb.z == rgb.z;
-    let is_bounded = all(rgb < vec3<f32>(1.0e6));
+    let is_bounded = all(rgb < vec3<f32>(6.5e4));
     let safe = select(vec3<f32>(0.0), rgb, is_finite && is_bounded);
 
     let brightness = max(safe.x, max(safe.y, safe.z));

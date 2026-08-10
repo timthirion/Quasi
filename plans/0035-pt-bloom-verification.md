@@ -1,8 +1,8 @@
 # PT-bloom-verification — close the gaps plan 0029 left open
 
 - **Status:** proposed
-- **Last updated:** 2026-07-30
-- **Last touched on:** created during the 0029 closing pass, to hold the four verification riders and one whole milestone that 0029 shipped without
+- **Last updated:** 2026-08-10
+- **Last touched on:** created during the 0029 closing pass to hold the four verification riders and one whole milestone that 0029 shipped without. A second closure-pass run then ran the `close-plan` review gauntlet the first pass explicitly skipped (plan-skeptic + code-attacker/defender + render-attacker) and surfaced three P0 correctness bugs in the shipped bloom code that the inline verification never caught. Those were fixed in-place ahead of this plan's execution — see the `Prior P0 fixes` section below — so this plan's milestones now build on a known-good foundation.
 
 ## Goal
 
@@ -20,6 +20,60 @@ first-class: a plan isn't done until it works in both targets" — was
 violated by 0029. Bloom is native-only today. Since the whole reason
 this renderer exists is the live in-browser widget, a post-process
 that only runs offline is a post-process the blog reader never sees.
+
+## Prior P0 fixes (landed before this plan starts)
+
+The 2026-07-30 close of 0029 explicitly skipped the `close-plan`
+skill's review-agent gauntlet ("verification was inline"). A
+2026-08-10 run of that gauntlet surfaced three P0 correctness
+bugs in shipped bloom code, all fixed before this plan begins:
+
+* **P0-A — Firefly guard vs Rgba16Float saturation.** The extract
+  shader (`src/pathtrace/shaders/bloom_extract.wgsl`) and the CPU
+  reference in `src/pathtrace/offscreen.rs` both guarded fireflies
+  at `< 1e6`, while the mip chain storage is `Rgba16Float` (f16
+  max ≈ 65504). Any pixel in `(65504, 1e6)` passed the extract
+  guard and then rounded to `+Inf` on the store into mip 0,
+  propagating through the entire chain via the tent-kernel
+  upsample. The `--emission-scale 500` Vespa-night hero (commit
+  `6486b93`) sits squarely in that band. Guard tightened to
+  `< 6.5e4` in both places. Two new CPU tests pin the fix:
+  `bloom_soft_knee_clamps_fireflies` now includes a `1.0e5` case
+  (the previously-broken band); `bloom_soft_knee_admits_pixel_below_f16_bound`
+  asserts a `6.0e4` pixel still extracts (guard is tight enough,
+  not over-aggressive).
+
+* **P0-B — Bloom silently degenerated at `min(w,h) < 32`.** The
+  Kawase mip loop stopped at `< 16` per side, so below the 32-px
+  floor `levels.len() == 1`, the downsample loop iterated `0..0`,
+  and mip 0 stayed as the raw extract output. Composite then
+  added `intensity * extracted_radiance` back into the radiance
+  buffer — brightening pixels above threshold without any spread.
+  Silent correctness failure; no test surfaced it. Fixed in
+  `render_offscreen_async`: the bloom entry now
+  `log::warn!` + `Option::filter`s the config to `None` when the
+  min dim is below 32. Regression test in
+  `tests/bloom.rs::bloom_below_min_dimension_is_skipped_not_wrong`
+  (`#[ignore]` GPU test) renders 24×24 Cornell with and without
+  bloom and asserts byte-identical radiance.
+
+* **P0-C — NaN slipped past every bloom CLI clamp.** The guards
+  used `x < 0.0`; `NaN < 0.0` is false in IEEE-754, so
+  `--bloom-intensity NaN`, `--bloom-knee NaN`, and
+  `--bloom-threshold anything` all parsed cleanly and NaN
+  propagated into `composite = intensity * bloom`, turning every
+  pixel into NaN. `--bloom-threshold` had no clamp at all. Fixed
+  in `src/main.rs`: guards now `!x.is_finite() || x < 0.0` (or
+  `<= 0.0` for knee); threshold gains a `!is_finite() || < 0.0`
+  guard. `bloom_flags_reject_nan_and_infinity` pins the fix.
+
+Detail on the fixes and their tests lives in the commit message
++ code comments (`P0-A` / `P0-B` / `P0-C` tags). The five
+milestones below now execute against a bloom pipeline whose
+firefly guard, dimensionality edge case, and CLI-input handling
+are all known-correct — the widget budget measurement (in
+particular) becomes a signal about the composite cost rather
+than about latent bugs.
 
 ## Context
 

@@ -395,9 +395,13 @@ fn parse_render_args(args: &[String]) -> Result<RenderArgs, String> {
                     .next()
                     .ok_or_else(|| "--bloom-intensity needs a number".to_string())?;
                 r.bloom_intensity = v.parse().map_err(|e| format!("--bloom-intensity: {e}"))?;
-                if r.bloom_intensity < 0.0 {
+                // NaN passes `< 0.0` (code-attacker P0-C, plan 0029
+                // closure): `NaN < 0` is false in IEEE-754. Guard
+                // with `!is_finite()` first so NaN and Inf are
+                // rejected before the range check.
+                if !r.bloom_intensity.is_finite() || r.bloom_intensity < 0.0 {
                     return Err(format!(
-                        "--bloom-intensity must be ≥ 0; got {}",
+                        "--bloom-intensity must be finite and ≥ 0; got {}",
                         r.bloom_intensity,
                     ));
                 }
@@ -407,14 +411,27 @@ fn parse_render_args(args: &[String]) -> Result<RenderArgs, String> {
                     .next()
                     .ok_or_else(|| "--bloom-threshold needs a number".to_string())?;
                 r.bloom_threshold = v.parse().map_err(|e| format!("--bloom-threshold: {e}"))?;
+                // Threshold had no clamp at all before P0-C —
+                // negative or NaN would put the extract shader's
+                // `brightness - threshold` in undefined territory.
+                if !r.bloom_threshold.is_finite() || r.bloom_threshold < 0.0 {
+                    return Err(format!(
+                        "--bloom-threshold must be finite and ≥ 0; got {}",
+                        r.bloom_threshold,
+                    ));
+                }
             }
             "--bloom-knee" => {
                 let v = iter
                     .next()
                     .ok_or_else(|| "--bloom-knee needs a number".to_string())?;
                 r.bloom_knee = v.parse().map_err(|e| format!("--bloom-knee: {e}"))?;
-                if r.bloom_knee <= 0.0 {
-                    return Err(format!("--bloom-knee must be > 0; got {}", r.bloom_knee));
+                // Same NaN-slip fix as intensity (P0-C).
+                if !r.bloom_knee.is_finite() || r.bloom_knee <= 0.0 {
+                    return Err(format!(
+                        "--bloom-knee must be finite and > 0; got {}",
+                        r.bloom_knee,
+                    ));
                 }
             }
             "--sky" => {
@@ -981,6 +998,27 @@ mod tests {
         // Zero intensity is legal: bloom computed, contributes
         // nothing. Useful as an A/B control in the sweep harness.
         assert!(parse(&["--bloom-intensity", "0"]).is_ok());
+    }
+
+    /// PT-bloom P0-C — `NaN < 0.0` is false in IEEE-754, so before
+    /// the closure-pass fix, `--bloom-intensity NaN` and friends
+    /// slipped past the range guard and produced NaN pixels in the
+    /// composite step. The guards are now `!is_finite() || < 0.0`.
+    /// `--bloom-threshold` also gained a guard it never had.
+    #[test]
+    fn bloom_flags_reject_nan_and_infinity() {
+        assert!(parse(&["--bloom-intensity", "nan"]).is_err());
+        assert!(parse(&["--bloom-threshold", "nan"]).is_err());
+        assert!(parse(&["--bloom-knee", "nan"]).is_err());
+
+        assert!(parse(&["--bloom-intensity", "inf"]).is_err());
+        assert!(parse(&["--bloom-threshold", "inf"]).is_err());
+        assert!(parse(&["--bloom-knee", "inf"]).is_err());
+
+        // Threshold was previously unguarded — a negative value put
+        // `brightness - threshold` in territory where every mid-
+        // brightness pixel had an astronomical linear branch.
+        assert!(parse(&["--bloom-threshold", "-1"]).is_err());
     }
 
     /// PT-adaptive/cli: `--noise-threshold` accepts a positive

@@ -120,8 +120,14 @@ impl Aovs {
     #[cfg(test)]
     pub fn soft_knee_extract_reference(rgb: [f32; 3], threshold: f32, knee: f32) -> [f32; 3] {
         // Firefly guard (matches the shader's `is_finite && is_bounded`).
+        // The 6.5e4 threshold matches the f16 max of the Rgba16Float
+        // bloom mip storage — anything above it would round to +Inf
+        // on store and poison the entire chain. Prior versions used
+        // `< 1.0e6`, leaving pixels in (65504, 1e6) unclamped; the
+        // `--emission-scale 500` Vespa-night hero (commit `6486b93`)
+        // sits squarely in that band.
         let is_finite = rgb[0].is_finite() && rgb[1].is_finite() && rgb[2].is_finite();
-        let is_bounded = rgb[0] < 1.0e6 && rgb[1] < 1.0e6 && rgb[2] < 1.0e6;
+        let is_bounded = rgb[0] < 6.5e4 && rgb[1] < 6.5e4 && rgb[2] < 6.5e4;
         let safe = if is_finite && is_bounded {
             rgb
         } else {
@@ -1148,7 +1154,26 @@ async fn render_offscreen_async(
     // composite adds `intensity × bloom_mip0` to the radiance in
     // the *other* ping-pong slot and we bump read_idx so the
     // existing readback picks up the bloomed image.
-    if let Some(bloom_cfg) = cfg.bloom {
+    //
+    // Below the 32-px floor the Kawase mip chain would degenerate
+    // to a single level (the width/height would halve to < 16 px
+    // after the first step and break out of the loop), which means
+    // the downsample loop iterates `0..0`, the upsample loop the
+    // same, and mip 0 stays as the raw extract output. Composite
+    // then adds `intensity * extracted_radiance` to the radiance —
+    // brightening pixels above threshold *without any spread*. That
+    // is a silent correctness failure (bloom claims to blur; it
+    // doesn't). Warn + skip bloom entirely at those sizes.
+    // (Code-attacker P0-B, plan 0029 closure.)
+    if cfg.bloom.is_some() && (cfg.width < 32 || cfg.height < 32) {
+        log::warn!(
+            "PT-bloom: skipping bloom pass — render is {}×{}, below the 32-px \
+             minimum for a meaningful Kawase mip chain",
+            cfg.width,
+            cfg.height,
+        );
+    }
+    if let Some(bloom_cfg) = cfg.bloom.filter(|_| cfg.width >= 32 && cfg.height >= 32) {
         // Mip chain: cap at 5 levels, stop when a side would
         // shrink below 16 px so the 4-tap kernels stay sane.
         let mut levels: Vec<(u32, u32)> = vec![(cfg.width, cfg.height)];
@@ -1975,10 +2000,21 @@ mod tests {
 
     /// PT-bloom: NaN / Inf / firefly pixels are clamped to zero
     /// before any math runs — preventing them from propagating
-    /// through the mip chain.
+    /// through the mip chain. The 1e5 case is specifically the
+    /// P0-A regression the code-attacker surfaced during plan
+    /// 0029's closure: an earlier guard used `< 1e6` while the mip
+    /// storage is Rgba16Float (f16 max ≈ 65504), so pixels in
+    /// (65504, 1e6) would pass the extract guard but overflow the
+    /// mip texture on store and poison the entire chain. The
+    /// tightened `< 6.5e4` guard catches 1e5.
     #[test]
     fn bloom_soft_knee_clamps_fireflies() {
         let out = Aovs::soft_knee_extract_reference([f32::NAN, 0.5, 1.5], 1.0, 0.5);
+        assert_eq!(out, [0.0, 0.0, 0.0]);
+
+        // Previously-broken band (65504, 1e6): must clamp under the
+        // tightened 6.5e4 guard. This is the direct P0-A regression.
+        let out = Aovs::soft_knee_extract_reference([1.0e5, 0.5, 1.5], 1.0, 0.5);
         assert_eq!(out, [0.0, 0.0, 0.0]);
 
         let out = Aovs::soft_knee_extract_reference([1.0e7, 0.5, 1.5], 1.0, 0.5);
@@ -1986,6 +2022,22 @@ mod tests {
 
         let out = Aovs::soft_knee_extract_reference([f32::INFINITY, 0.5, 1.5], 1.0, 0.5);
         assert_eq!(out, [0.0, 0.0, 0.0]);
+    }
+
+    /// PT-bloom P0-A: the tightened firefly guard is `< 6.5e4`
+    /// (not `<= 6.5e4`), so a pixel just below the f16 bound must
+    /// *still* extract — otherwise legitimate HDR pixels would be
+    /// stranded by an over-aggressive clamp.
+    #[test]
+    fn bloom_soft_knee_admits_pixel_below_f16_bound() {
+        let out = Aovs::soft_knee_extract_reference([6.0e4, 0.5, 1.5], 1.0, 0.5);
+        // brightness = 6e4. linear ≈ 6e4. curve ≤ 0.5. weight ≈ 1.
+        // Output R ≈ 6e4 · 1.
+        assert!(
+            out[0] > 0.99 * 6.0e4,
+            "6e4 must extract (not clamp under the tightened guard); got {}",
+            out[0]
+        );
     }
 
     /// PT-adaptive-sample-count: a non-divisible total rounds up
