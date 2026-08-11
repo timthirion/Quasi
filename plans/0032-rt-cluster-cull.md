@@ -1,8 +1,8 @@
 # RT-cluster-cull — GPU-driven cluster culling for the raster track
 
-- **Status:** proposed — rev 1, pre-revision. No implementation started (verified 2026-07-30)
-- **Last updated:** 2026-07-30
-- **Last touched on:** 2026-07-30 roadmap-reconciliation pass — status vocabulary only. Substance is still the initial draft from the Nanite-direction scoping note; it has not been through the `plan-skeptic` revision rounds that plans 0028–0031 got, so treat the design as unhardened.
+- **Status:** proposed — rev 2, post first-pass skeptic. No implementation started.
+- **Last updated:** 2026-08-11
+- **Last touched on:** first substantive `plan-skeptic` pass. Rev 1 was a straight port of the Nanite-direction scoping note and had never been attacked. The skeptic found 3×P0 + 3×P1. Rev 2 addresses each: (P0-1) N × 3100 indirect-draw CPU submission cost added as a new `submission-budget` milestone that gates the stress-scene work — if the microbenchmark busts half the frame budget, the design pivots to material-batched indirect draws before proceeding; (P0-2) stress-scene gains an image-correctness assertion (RMSE ≤ 0.02 vs a naive-draw-all golden), closing the "cull-everything ticks the milestone" hole; (P0-3) the `buffers` milestone stops citing a nonexistent `SceneBuffers` and now correctly names the raster-side `Scene` + `MeshHandle` types the new `RasterClusterBuffers` sits alongside; (P1-4) Hi-Z occlusion gains a camera-discontinuity guard so motum's discrete viewpoint teleports don't produce popping; (P1-5) the sphere test now asserts a max normal-cone half-angle bound so a degenerate Morton-window clusterer can't tick with all-flat cones; (P1-6) the 1 M-tri stress scene is specified as material-uniform (one shared material across all 250 spheres) with the M-material case noted as a follow-up.
 
 ## Goal
 
@@ -161,30 +161,79 @@ occluded.
 
 **Standard caveat: this is temporally stable but one-frame
 late.** Camera teleports or fast strafes cause one frame of
-"too aggressive cull, things pop in." Mitigation: a small
-expand-bounds margin (5%) at the cost of slightly less culling.
+"too aggressive cull, things pop in." A small expand-bounds
+margin (5%) helps for continuous camera motion (mouse-orbit,
+scroll-zoom); it does **not** help for the discrete-camera
+case, which motum's planner widget hits every time the user
+switches viewpoints (skeptic P1-4). A 5% radius expansion on
+a 0.1 m cluster gives 5 mm of slack; the last-frame Hi-Z
+pyramid is from an entirely different viewpoint and is
+worthless for occlusion.
+
+**Camera-discontinuity guard:** the cull pass takes a
+uniform `hi_z_valid: u32` flag. Native + widget entry points
+compare the new frame's view matrix against the previous
+frame's; if the L2 norm of the difference exceeds a threshold
+(0.1 in camera-space units for translation, 5° for
+rotation — chosen to fire on motum's discrete viewpoint
+switches but not on continuous orbit), the flag goes `0` and
+the cull pass falls back to frustum + backface only for that
+frame. Hi-Z is trusted again on frame `t+1`.
+
 A more robust two-pass approach (cull-by-last-frame, draw,
-cull-newly-visible, draw again) is documented as a follow-up.
+build Hi-Z, cull-newly-visible, draw again — the Karis 2021
+§5 algorithm) eliminates the one-frame-late artifact
+entirely at the cost of one extra cull + draw pass per
+frame. Documented as `RT-twopass-occlusion` in Followups; the
+discontinuity-guard fallback is the widget-ready v1 answer.
 
 ### Indirect draw + the WebGPU-MVP API
 
 The cull pass writes one `DrawIndexedIndirectArgs` entry per
 surviving cluster into a storage buffer (with a separate
 atomic counter for "how many clusters survived"). The CPU
-issues a single `drawIndexedIndirect` call against this
-buffer.
+issues N separate `drawIndexedIndirect` calls in a loop,
+sourcing each call's args from the GPU-resident buffer.
 
-WebGPU's MVP **does not** have multi-draw-indirect; we issue N
-separate draw calls in a loop from CPU, sourcing their args
-from the GPU-resident buffer. This is sub-optimal vs Vulkan/D3D12
-multi-draw but works. The "N separate indirect draws" cost is
-mainly CPU-side overhead which scales with N. The cull pass's
-output is the survivor count read back to CPU — a one-frame
-round-trip we accept as the cost of WebGPU-MVP scope.
+**CPU-submission budget is load-bearing** (skeptic P0-1). At
+7800 clusters × 60 % cull rate = ~3100 surviving clusters per
+frame. If each `drawIndexedIndirect` call costs ~10 µs of
+Rust→wgpu-hal→Metal (or wgpu→WebGPU→browser JS) overhead —
+the realistic range on wgpu 29 is 5–20 µs on Metal, higher in
+the browser — then 3100 × 10 µs = 31 ms of CPU submission
+*alone*, before the GPU does any work. That would bust the
+16 ms native Done-when by 2× and the 33 ms browser Done-when
+outright. **The `[RT-cluster-cull/submission-budget]`
+milestone measures this in isolation before any stress-scene
+work starts.**
 
-The multi-draw-indirect alternative is documented as a
-follow-up (RT-multidraw-extension) once the wgpu side exposes
-WGPUMultiDrawIndirect on backends that support it.
+Two documented fallbacks if the budget bust:
+
+1. **Material-batched indirect draws** (primary fallback):
+   pre-sort the mesh index buffer so triangles of the same
+   material are contiguous, then bucket surviving clusters by
+   material in the cull pass. Issue **M** draws (M = number
+   of materials, ≤ 256 per the texture-array cap), each
+   covering a compacted per-material index range. M ≈ 8 on a
+   typical scene → ~80 µs of CPU submission, comfortably
+   inside budget. Costs one extra compaction pass and a
+   material-sorted index buffer at scene-build time.
+2. **Batch-all-materials draw** (secondary fallback): if
+   material-batched still busts (extremely unlikely), issue
+   one `drawIndexedIndirect` per frame covering the entire
+   surviving-cluster index range, at the cost of losing
+   per-material pipeline switches. Only viable for the
+   single-material stress-scene.
+
+The multi-draw-indirect alternative
+(`RT-multidraw-indirect`, see Followups) collapses the
+N-iteration loop into one call once wgpu surfaces
+`WGPUMultiDrawIndirect` on Vulkan/D3D12 backends. WebGPU MVP
+doesn't have it; wasm won't get it soon.
+
+The cull pass's output is the survivor count read back to
+CPU — a one-frame round-trip we accept as the cost of
+WebGPU-MVP scope.
 
 ### Bindless workaround for materials
 
@@ -194,9 +243,13 @@ material indices in the cluster struct, sampled per fragment.
 Same workaround Quasi already ships on the path-trace side.
 
 This caps the renderer at ~256 distinct materials per scene
-(texture-array layer limit per spec). Adequate for the
-stress-scene milestone; constrained but documented for any
-future scene-class push.
+(texture-array layer limit per spec). The stress scene uses
+**one shared material** across all 250 spheres (skeptic P1-6)
+so the stress-scene number reflects cull-pass overhead, not
+material-switch overhead. The multi-material case
+(hundreds of distinct materials in one scene) is a follow-up
+(`RT-cluster-cull-multi-material`) and is where the
+material-batched indirect-draw fallback earns its keep.
 
 ### Native + web lockstep
 
@@ -232,14 +285,27 @@ pre-plan).
   * On a procedural sphere (5184 triangles → ~41 clusters
     at 128 tri/cluster), every triangle index appears in
     exactly one cluster.
+  * **Normal-cone tightness bound** (skeptic P1-5): median
+    cluster half-angle on the procedural sphere is
+    `≤ π/3` (60°). This gates the Morton-window clusterer
+    against a degenerate mode where every cluster's cone
+    covers the whole hemisphere and the backface cull
+    contributes nothing. If the bound trips, the plan
+    switches to `RT-cluster-build-metis` before proceeding
+    to the frustum-cull milestone.
 - [ ] **[RT-cluster-cull/buffers]** GPU upload path:
   `GpuCluster` storage buffer + per-cluster vertex/index
   buffers. New `RasterClusterBuffers` struct in
-  `src/raster/cluster.rs` paralleling `SceneBuffers` for
-  the path-trace side. Existing `upload_mesh` keeps its
-  contract; the cluster builder runs **alongside** the
-  current `MeshHandle` path so the motum-facing API is
-  unaffected.
+  `src/raster/cluster.rs`, sitting alongside the existing
+  `Scene` + `MeshHandle` types in `src/raster/scene.rs`
+  (skeptic P0-3 correction — the previous milestone text
+  cited a `SceneBuffers` that doesn't exist in the raster
+  module; the closest analogue is the path-trace-side
+  `SceneBuffers` in `src/pathtrace/scene.rs`, which
+  motivates the naming but isn't imported here). Existing
+  `upload_mesh` keeps its contract; the cluster builder
+  runs alongside the current `MeshHandle` path so the
+  motum-facing API is unaffected.
 - [ ] **[RT-cluster-cull/frustum-cull]** WGSL compute shader
   `src/raster/shaders/cull.wgsl`. One workgroup per 32
   clusters; per-cluster plane-sphere classification against
@@ -264,18 +330,41 @@ pre-plan).
 - [ ] **[RT-cluster-cull/indirect-draw]** Compaction pass
   writes `DrawIndexedIndirectArgs` to a storage buffer;
   surviving-count read back to CPU; CPU issues N
-  `drawIndexedIndirect` calls. **Test:** rendered frame
-  pixel-matches the pre-plan "draw all clusters naively"
-  output within RMSE ≤ 0.001 (essentially identical;
-  difference is from indirect-draw command ordering only).
+  `drawIndexedIndirect` calls. **Correctness test:** on a
+  simple procedural scene (~ 40 clusters, one material),
+  the rendered frame with `cull-and-draw` matches the
+  naive `draw-all-clusters` render within RMSE ≤ 0.001
+  (essentially identical; only difference is indirect-draw
+  command ordering). Golden PNG committed at
+  `data/output/cluster_cull_indirect_ref.png`.
+- [ ] **[RT-cluster-cull/submission-budget]** *New in rev 2
+  (skeptic P0-1).* Microbenchmark the CPU cost of N
+  `drawIndexedIndirect` calls in isolation at
+  `N ∈ {100, 500, 1000, 3000, 8000}`, no cull pass, just
+  submit-and-time. Writes results to
+  `data/output/indirect_draw_submission_budget.csv`. **Hard
+  gate:** if `3000 × per-call-cost > 8 ms` on Apple M-series
+  native (i.e. more than half the 16 ms frame budget goes to
+  submission alone), the plan pivots to the material-batched
+  indirect-draw fallback before starting the stress-scene
+  milestone. If wasm/Safari overhead is more than 3× native,
+  the widget path documents itself as material-batched-only.
+  The CSV lands in `Findings`; the pivot decision is recorded
+  there too, whether the gate fired or not.
 - [ ] **[RT-cluster-cull/motum-noregression]** Re-run the
   existing motum-API tests with the cluster pipeline
   enabled. **Done-when:** existing motum scene tests pass
   unchanged; rendered output matches the pre-plan
-  rendering within RMSE ≤ 0.05.
+  rendering within RMSE ≤ 0.05. **Special case for the
+  Hi-Z camera-discontinuity guard:** the motum tests
+  include one viewpoint-teleport transition (frame N at
+  pose A, frame N+1 at pose B); the RMSE assertion on
+  frame N+1 must hold — no popping-in — which pins the
+  discontinuity guard (skeptic P1-4).
 - [ ] **[RT-cluster-cull/stress-scene]** Procedural scene
-  with 1 M total triangles (e.g. 250 subdivided spheres at
-  4000 triangles each, scattered through a viewing volume).
+  with 1 M total triangles (250 subdivided spheres at
+  4000 triangles each, scattered through a viewing volume,
+  **all sharing one material** per the P1-6 correction).
   **Numeric Done-when:**
   * Frame time with cluster culling enabled: ≤ 16 ms at
     1280×720 on Apple M-series native.
@@ -283,18 +372,31 @@ pre-plan).
     on the same hardware (i.e. ≥ 5× speedup from culling).
   * Cull rate (fraction of clusters culled per frame): ≥ 60%
     on a typical viewpoint.
+  * **Image correctness (skeptic P0-2):** rendered frame
+    matches a naive-draw-all reference of the same 1 M-tri
+    scene within RMSE ≤ 0.02. The reference is rendered
+    offline once (with culling disabled) and committed as
+    `data/output/cluster_stress_reference.png`. This
+    assertion closes the "a cull shader that culls
+    everything ticks the frame-time criteria trivially"
+    hole — a broken cull that produces a black frame or
+    dropped clusters fails the RMSE bound loudly.
   * Same scene rendered in browser (Apple M-series Safari):
     ≤ 33 ms (30 fps target for the browser, which carries a
     WebGPU driver overhead the native path doesn't pay).
 
 ## Done when
 
-* All seven milestones ticked
+* All nine milestones ticked (rev 2 adds `submission-budget` as
+  the ninth, gating the stress-scene work)
+* Submission-budget CSV in `Findings`; the material-batched
+  pivot decision is documented one way or the other
 * Stress-scene numeric table in `Findings`: M-series native
-  frame time, M-series Safari frame time, cull rate, on a
-  reproducible procedural scene committed at
-  `examples/gen_cluster_stress.rs`
-* Motum existing tests pass; rendered output regression test
+  frame time, M-series Safari frame time, cull rate, image
+  RMSE vs the golden, on a reproducible procedural scene
+  committed at `examples/gen_cluster_stress.rs`
+* Motum existing tests pass with cluster pipeline enabled;
+  the Hi-Z discontinuity-guard case (viewpoint teleport) is
   green
 * README features list gains "GPU-driven cluster culling
   (RT-cluster-cull)" under runtime
@@ -309,21 +411,41 @@ pre-plan).
 * **RT-cluster-build-metis** — swap the Morton-window
   clusterer for a proper edge-graph partitioner (METIS or
   the Karis 2021 algorithm). Yields more spherical
-  clusters → tighter bounds → higher cull rates.
+  clusters → tighter bounds → higher cull rates. Gate:
+  triggered *inside* rev 2 if the sphere-test half-angle
+  bound trips (`> π/3`).
+* **RT-cluster-cull-multi-material** — the stress-scene
+  milestone constrains itself to one material to isolate
+  cull-pass cost from material-switch cost (skeptic P1-6).
+  A follow-up scene with hundreds of distinct materials
+  exercises the material-batched indirect-draw path
+  end-to-end and measures the per-material draw-call
+  submission tax on both native and browser targets.
 * **RT-multidraw-indirect** — once wgpu surfaces
   multi-draw-indirect on Vulkan/D3D12 backends, collapse
   the N-iteration CPU loop into one call. WebGPU MVP gap;
-  doesn't help wasm.
-* **RT-twopass-occlusion** — Karis 2021's two-pass occlusion
-  (draw-last-visible, build Hi-Z, cull-newly-visible, draw
-  again) eliminates the one-frame-late artifact at the cost
-  of one extra cull + draw pass per frame. Worth it once a
-  scene with sufficient occlusion makes the artifact visible.
+  doesn't help wasm. Whether this earns its keep depends
+  on whether the material-batched fallback already brought
+  N low enough — record in `Findings`.
+* **RT-twopass-occlusion** — Karis 2021 §5's two-pass
+  occlusion (draw-last-visible, build Hi-Z,
+  cull-newly-visible, draw again) eliminates the
+  one-frame-late artifact entirely at the cost of one
+  extra cull + draw pass per frame. The rev-2 Hi-Z
+  camera-discontinuity guard is the v1 answer; this
+  follow-up is the v2 answer if the guard's fallback-to-
+  frustum-only frame produces visible artifacts on real
+  motum widget usage.
 * **RT-cluster-lod** — per-cluster LOD selection at draw
   time. Prerequisite for RT-virtualized; meaningful standalone
   if scene-scale geometry warrants.
 * **RT-micropoly** (plan 0033) — software rasterizer for
   sub-pixel triangles. Plugs into the indirect-draw arg
   buffer with a per-cluster "small or large" classifier.
+  Note: 0033 depends on this plan's cluster-id and
+  indirect-arg buffer layouts being stable — the
+  `submission-budget` pivot to material-batched draws (if
+  it fires) changes those layouts, so 0033 waits for rev
+  2's stress-scene work to complete before opening.
 * **RT-virtualized** (plan 0034) — cluster DAG + LOD +
   streaming. The full Nanite story.
